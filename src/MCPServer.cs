@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Collections.Generic;
 using System.Linq;
+using Rhino;
+using Rhino.Geometry;
 
 
 namespace RhinoMCPServer
@@ -164,6 +166,23 @@ namespace RhinoMCPServer
                                             "required": ["prompt", "maxTokens"]
                                         }
                                         """),
+                                },
+                                new Tool()
+                                {
+                                    Name = "sphere",
+                                    Description = "Creates a sphere.",
+                                    InputSchema = JsonSerializer.Deserialize<JsonElement>("""
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "radius": {
+                                                    "type": "number",
+                                                    "description": "The radius of the sphere."
+                                                }
+                                            },
+                                            "required": ["radius"]
+                                        }
+                                        """),
                                 }
                             ]
                         });
@@ -199,6 +218,22 @@ namespace RhinoMCPServer
                             return new CallToolResponse()
                             {
                                 Content = [new Content() { Text = $"LLM sampling result: {sampleResult.Content.Text}", Type = "text" }]
+                            };
+                        }
+                        else if (request.Params.Name == "sphere")
+                        {
+                            if (request.Params.Arguments is null || !request.Params.Arguments.TryGetValue("radius", out var radius))
+                            {
+                                throw new McpServerException("Missing required argument 'radius'");
+                            }
+                            var rhinoDoc = RhinoDoc.ActiveDoc;
+
+                            rhinoDoc.Objects.AddSphere(new Sphere(Point3d.Origin, Convert.ToDouble(radius?.ToString())), null);
+                            rhinoDoc.Views.Redraw();
+
+                            return new CallToolResponse()
+                            {
+                                Content = [new Content() { Text = $"Created sphere with radius {radius}", Type = "text" }] 
                             };
                         }
                         else

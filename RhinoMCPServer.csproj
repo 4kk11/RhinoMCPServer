@@ -5,6 +5,7 @@
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <TargetExt>.rhp</TargetExt>
     <NoWarn>NU1701</NoWarn>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
   
   <PropertyGroup>
@@ -24,12 +25,12 @@
     <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
   </ItemGroup>
 
-  <!-- Windowsの場合のDestinationFolder -->
+  <!-- Windows -->
   <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
     <MyDestinationFolder>$(APPDATA)\McNeel\Rhinoceros\myplugins\RhinoMCPServer</MyDestinationFolder>
   </PropertyGroup>
 
-  <!-- MacOSの場合のDestinationFolder -->
+  <!-- MacOS -->
   <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
     <MyDestinationFolder>$(HOME)/Library/Application Support/McNeel/Rhinoceros/9.0/MacPlugins/RhinoMCPServer</MyDestinationFolder>
   </PropertyGroup>
