@@ -1,0 +1,46 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	
+  <PropertyGroup>
+    <!-- Select the framework(s) you wish to target.
+        Rhino 6: net45
+        Rhino 7: net48
+        Rhino 8 Windows: net48, net7.0, net7.0-windows, net7.0-windows10.0.22000.0, etc
+        Rhino 8 Mac: net7.0, net7.0-macos, net7.0-macos12.0, etc
+    -->
+    <TargetFrameworks>net7.0;net48</TargetFrameworks>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <TargetExt>.rhp</TargetExt>
+    <NoWarn>NU1701</NoWarn>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <!-- Specifies information for Assembly and Yak -->
+    <Version>1.0</Version>
+    <Title>RhinoMCPServer</Title>
+    <Company>RhinoMCPServer Authors</Company>
+    <Description>Description of RhinoMCPServer</Description>
+  </PropertyGroup>
+
+  
+  <ItemGroup>
+    <PackageReference Include="RhinoCommon" Version="8.0.23304.9001" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <!-- Windowsの場合のDestinationFolder -->
+  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+    <MyDestinationFolder>$(APPDATA)\McNeel\Rhinoceros\myplugins\RhinoMCPServer</MyDestinationFolder>
+  </PropertyGroup>
+
+  <!-- MacOSの場合のDestinationFolder -->
+  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+    <MyDestinationFolder>$(HOME)/Library/Application Support/McNeel/Rhinoceros/MacPlugins\RhinoMCPServer</MyDestinationFolder>
+  </PropertyGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+		<ItemGroup>
+			<MySourceFiles Include="$(TargetDir)\**" />
+		</ItemGroup>
+		<Copy SourceFiles="@(MySourceFiles)" DestinationFolder="$(MyDestinationFolder)" />
+	</Target>
+  
+</Project>
