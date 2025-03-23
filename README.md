@@ -1,6 +1,6 @@
 # RhinoMCPServer
 
-RhinoでModel Context Protocol (MCP)サーバーを起動するためのRhinocerosプラグインです。MCPクライアントとSSE (Server-Sent Events)で直接通信し、Rhinoの機能をMCPツールとして提供します。
+RhinocerosでModel Context Protocol (MCP)サーバーを起動するためのRhinocerosプラグインです。MCPクライアントとSSE (Server-Sent Events)で直接通信し、Rhinoの機能をMCPツールとして提供します。
 
 ## 概要
 
