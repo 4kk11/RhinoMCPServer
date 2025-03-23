@@ -1,68 +1,75 @@
 # RhinoMCPServer
 
-RhinocerosでModel Context Protocol (MCP)サーバーを実行するためのプラグインです。Rhinoの機能をMCPツールとして提供し、MCPクライアントと効率的な通信を実現します。
+A plugin for executing Model Context Protocol (MCP) server in Rhinoceros. It provides Rhino's functionality as MCP tools and enables efficient communication with MCP clients.
 
-## 概要
+## Overview
 
-このプラグインは、[Model Context Protocol](https://github.com/modelcontextprotocol/csharp-sdk)を使用してRhinoの機能をMCPクライアントに公開します。WebSocket通信ではなく、Server-Sent Events (SSE)を採用することで、より効率的で軽量な双方向通信を実現しています。
+This plugin exposes Rhino's functionality to MCP clients using the [Model Context Protocol](https://github.com/modelcontextprotocol/csharp-sdk). Instead of WebSocket communication, it adopts Server-Sent Events (SSE) to achieve more efficient and lightweight bidirectional communication.
 
-## 使用例
-### スケッチから作図 & 属性情報の付与
+## Usage Example
+### Drawing from Sketch & Attribute Information Assignment
 https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
 
-## システム要件
+## System Requirements
 
 - Rhino 9 WIP
 - .NET 8.0 Runtime
 
-## 使用方法
+## How to Use
 
-### MCPサーバーの起動
+### Starting the MCP Server
 
-1. Rhinoのコマンドラインに`StartMCPServerCommand`と入力します
-2. ポート番号の設定
-   - デフォルト：3001（Enterキーを押すと自動的に使用）
-   - カスタム：任意のポート番号を入力可能
-3. サーバー起動後、指定したポートでMCPクライアントからの接続を待機します
+1. Enter `StartMCPServerCommand` in Rhino's command line
+2. Port number configuration
+   - Default: 3001 (automatically used when pressing Enter)
+   - Custom: Any port number can be entered
+3. After server startup, it waits for MCP client connections on the specified port
 
-### MCPクライアントとの接続
+### Connecting with MCP Clients
 
-現在、Claude DesktopのMCPクライアントはSSE接続に直接対応していないため、[標準入出力をSSEにブリッジするmcpサーバー](https://github.com/boilingdata/mcp-server-and-gw)を使用する必要があります。
+Currently, Claude Desktop's MCP client does not directly support SSE connections, so you need to use the [MCP server that bridges standard I/O to SSE](https://github.com/boilingdata/mcp-server-and-gw).
 
-## 提供されるMCPツール
+## Provided MCP Tools
 
 - **echo**
-  - 機能：入力テキストのエコーバック（ヘルスチェック用）
-  - パラメータ：
-    - `message` (string, required) - エコーバックするテキスト
+  - Function: Echo back input text (for health check)
+  - Parameters:
+    - `message` (string, required) - Text to echo back
 
 - **sphere**
-  - 機能：Rhino内での球体作成
-  - パラメータ：
-    - `radius` (number, required) - 球体の半径（単位：Rhinoの現在の単位系）
-    - `x` (number, optional, default: 0) - 球体の中心のX座標
-    - `y` (number, optional, default: 0) - 球体の中心のY座標
-    - `z` (number, optional, default: 0) - 球体の中心のZ座標
+  - Function: Create a sphere in Rhino
+  - Parameters:
+    - `radius` (number, required) - Sphere radius (in current Rhino units)
+    - `x` (number, optional, default: 0) - X coordinate of sphere center
+    - `y` (number, optional, default: 0) - Y coordinate of sphere center
+    - `z` (number, optional, default: 0) - Z coordinate of sphere center
 
 - **deleteObject**
-  - 機能：指定されたGUIDのRhinoオブジェクトを削除
-  - パラメータ：
-    - `guid` (string, required) - 削除するオブジェクトのGUID
+  - Function: Delete a Rhino object with specified GUID
+  - Parameters:
+    - `guid` (string, required) - GUID of the object to delete
 
 - **polyline**
-  - 機能：指定された点列から折れ線を作成
-  - パラメータ：
-    - `points` (array, required, minItems: 2) - 折れ線の頂点を定義する点の配列
-      - 各点のパラメータ：
-        - `x` (number, required) - X座標
-        - `y` (number, required) - Y座標
-        - `z` (number, optional, default: 0) - Z座標
+  - Function: Create a polyline from specified points
+  - Parameters:
+    - `points` (array, required, minItems: 2) - Array of points defining polyline vertices
+      - Parameters for each point:
+        - `x` (number, required) - X coordinate
+        - `y` (number, required) - Y coordinate
+        - `z` (number, optional, default: 0) - Z coordinate
 
-## ログ
+- **set_user_text**
+  - Function: Set user text attributes for a Rhino object
+  - Parameters:
+    - `guid` (string, required) - GUID of the target Rhino object
+    - `key` (string, required) - Key for the user text attribute
+    - `value` (string, required) - Value to set
 
-サーバーのログは以下の場所に保存されます：
-- プラグインディレクトリ内の`logs/MCPRhinoServer_.log`
+## Logs
 
-## ライセンス
+Server logs are saved in:
+- `logs/MCPRhinoServer_.log` within the plugin directory
 
-本プロジェクトは[MITライセンス](./LICENSE)のもとで公開されています。詳細はLICENSEファイルをご確認ください。
+## License
+
+This project is released under the [MIT License](./LICENSE). Please refer to the LICENSE file for details.
