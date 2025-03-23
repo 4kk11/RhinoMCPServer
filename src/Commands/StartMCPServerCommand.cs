@@ -5,8 +5,9 @@ using Rhino;
 using Rhino.Commands;
 using Rhino.Input;
 using Rhino.Input.Custom;
+using RhinoMCPServer.MCP;
 
-namespace RhinoMCPServer
+namespace RhinoMCPServer.Commands
 {
     public class StartMCPServerCommand : Command
     {
@@ -18,7 +19,7 @@ namespace RhinoMCPServer
             Instance = this;
         }
 
-        public static StartMCPServerCommand Instance { get; private set; }
+        public static StartMCPServerCommand? Instance { get; private set; }
 
         public override string EnglishName => "StartMCPServerCommand";
 

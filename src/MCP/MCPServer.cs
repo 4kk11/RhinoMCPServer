@@ -13,10 +13,10 @@ using System.Collections.Generic;
 using System.Linq;
 using Rhino;
 using Rhino.Geometry;
-using RhinoMCPServer.Tools;
+using RhinoMCPServer.MCP.Tools;
 
 
-namespace RhinoMCPServer
+namespace RhinoMCPServer.MCP
 {
     public static class MCPServer
     {

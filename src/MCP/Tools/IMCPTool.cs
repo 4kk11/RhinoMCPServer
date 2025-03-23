@@ -3,7 +3,7 @@ using ModelContextProtocol.Server;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace RhinoMCPServer.Tools
+namespace RhinoMCPServer.MCP.Tools
 {
     public interface IMCPTool
     {

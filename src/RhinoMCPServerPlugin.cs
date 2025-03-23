@@ -11,6 +11,6 @@ namespace RhinoMCPServer
             Console.WriteLine("RhinoMCPServerPlugin");
         }
         
-        public static RhinoMCPServerPlugin Instance { get; private set; }
+        public static RhinoMCPServerPlugin? Instance { get; private set; }
     }
 }

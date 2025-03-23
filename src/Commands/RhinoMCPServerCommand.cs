@@ -6,7 +6,7 @@ using Rhino.Geometry;
 using Rhino.Input;
 using Rhino.Input.Custom;
 
-namespace RhinoMCPServer
+namespace RhinoMCPServer.Commands
 {
     public class RhinoMCPServerCommand : Command
     {
@@ -15,7 +15,7 @@ namespace RhinoMCPServer
             Instance = this;
         }
 
-        public static RhinoMCPServerCommand Instance { get; private set; }
+        public static RhinoMCPServerCommand? Instance { get; private set; }
 
         public override string EnglishName => "RhinoMCPServerCommand";
 

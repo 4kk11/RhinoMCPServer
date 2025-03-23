@@ -4,7 +4,7 @@ using System;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace RhinoMCPServer.Tools
+namespace RhinoMCPServer.MCP.Tools
 {
     public class SampleLLMTool : IMCPTool
     {
