@@ -21,7 +21,7 @@ namespace RhinoMCPServer.Commands
 
         public static StartMCPServerCommand? Instance { get; private set; }
 
-        public override string EnglishName => "StartMCPServerCommand";
+        public override string EnglishName => "StartMCPServer";
 
         protected override Result RunCommand(RhinoDoc doc, RunMode mode)
         {

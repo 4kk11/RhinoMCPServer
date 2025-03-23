@@ -23,14 +23,17 @@ namespace RhinoMCPServer.MCP
         private static ILoggerFactory CreateLoggerFactory()
         {
             // Use serilog
+            string pluginPath = Path.GetDirectoryName(typeof(MCPServer).Assembly.Location)!;
+            string logDir = Path.Combine(pluginPath, "logs");
+            Directory.CreateDirectory(logDir); // logsディレクトリが存在しない場合は作成
+
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Verbose() // Capture all log levels
-                .WriteTo.File(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", "MCPRhinoServer_.log"),
+                .WriteTo.File(Path.Combine(logDir, "MCPRhinoServer_.log"),
                     rollingInterval: RollingInterval.Day,
                     outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
                 .CreateLogger();
 
-            var logsPath = Path.Combine(AppContext.BaseDirectory, "mcp-rhino.log");
             return LoggerFactory.Create(builder =>
             {
                 builder.AddSerilog();
@@ -51,7 +54,7 @@ namespace RhinoMCPServer.MCP
                     Prompts = new(),
                 },
                 ProtocolVersion = "2024-11-05",
-                ServerInstructions = "This is a test server with only stub functionality"
+                ServerInstructions = "This is a Model Context Protocol server for Rhino.",
             };
 
             IMcpServer? server = null;
