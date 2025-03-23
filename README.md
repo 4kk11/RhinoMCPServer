@@ -28,19 +28,36 @@ RhinocerosでModel Context Protocol (MCP)サーバーを実行するためのプ
 ## 提供されるMCPツール
 
 - **echo**
-  - 機能：入力テキストのエコーバック(ヘルスチェック用)
+  - 機能：入力テキストのエコーバック（ヘルスチェック用）
   - パラメータ：
-    - `message` (string) - エコーバックするテキスト
+    - `message` (string, required) - エコーバックするテキスト
 
 - **sphere**
   - 機能：Rhino内での球体作成
   - パラメータ：
-    - `radius` (number) - 球体の半径（単位：Rhinoの現在の単位系）
+    - `radius` (number, required) - 球体の半径（単位：Rhinoの現在の単位系）
+    - `x` (number, optional, default: 0) - 球体の中心のX座標
+    - `y` (number, optional, default: 0) - 球体の中心のY座標
+    - `z` (number, optional, default: 0) - 球体の中心のZ座標
+
+- **deleteObject**
+  - 機能：指定されたGUIDのRhinoオブジェクトを削除
+  - パラメータ：
+    - `guid` (string, required) - 削除するオブジェクトのGUID
+
+- **polyline**
+  - 機能：指定された点列から折れ線を作成
+  - パラメータ：
+    - `points` (array, required, minItems: 2) - 折れ線の頂点を定義する点の配列
+      - 各点のパラメータ：
+        - `x` (number, required) - X座標
+        - `y` (number, required) - Y座標
+        - `z` (number, optional, default: 0) - Z座標
 
 ## ログ
 
 サーバーのログは以下の場所に保存されます：
-- アプリケーションディレクトリ内の`logs/TestServer_.log`
+- プラグインディレクトリ内の`logs/MCPRhinoServer_.log`
 
 ## ライセンス
 
