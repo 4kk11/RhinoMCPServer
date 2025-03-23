@@ -15,7 +15,6 @@ namespace RhinoMCPServer.MCP.Tools
             var tools = new List<IMCPTool>
             {
                 new EchoTool(),
-                new SampleLLMTool(),
                 new SphereTool(),
                 new DeleteObjectTool(),
                 new PolylineTool()
