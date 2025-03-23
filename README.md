@@ -4,11 +4,11 @@ RhinocerosでModel Context Protocol (MCP)サーバーを実行するためのプ
 
 ## 概要
 
-このプラグインは、[Model Context Protocol](https://github.com/modelcontextprotocol/csharp-sdk)を使用してRhinoの機能をMCPクライアントに公開します。従来のWebSocket通信ではなく、Server-Sent Events (SSE)を採用することで、より効率的で軽量な双方向通信を実現しています。
+このプラグインは、[Model Context Protocol](https://github.com/modelcontextprotocol/csharp-sdk)を使用してRhinoの機能をMCPクライアントに公開します。WebSocket通信ではなく、Server-Sent Events (SSE)を採用することで、より効率的で軽量な双方向通信を実現しています。
 
 ## システム要件
 
-- Rhino 9 WIP（Work In Progress：開発プレビュー版）
+- Rhino 9 WIP
 - .NET 8.0 Runtime
 
 ## 使用方法
@@ -27,20 +27,11 @@ RhinocerosでModel Context Protocol (MCP)サーバーを実行するためのプ
 
 ## 提供されるMCPツール
 
-### 基本ツール
 - **echo**
-  - 機能：入力テキストのエコーバック
+  - 機能：入力テキストのエコーバック(ヘルスチェック用)
   - パラメータ：
     - `message` (string) - エコーバックするテキスト
 
-### LLM関連
-- **sampleLLM**
-  - 機能：MCPのサンプリング機能を使用したLLMレスポンス生成
-  - パラメータ：
-    - `prompt` (string) - LLMへのプロンプト
-    - `maxTokens` (number) - 生成する最大トークン数
-
-### Rhinoジオメトリ
 - **sphere**
   - 機能：Rhino内での球体作成
   - パラメータ：
