@@ -17,7 +17,8 @@ namespace RhinoMCPServer.MCP.Tools
                 new EchoTool(),
                 new SampleLLMTool(),
                 new SphereTool(),
-                new DeleteObjectTool()
+                new DeleteObjectTool(),
+                new PolylineTool()
             };
 
             _tools = tools.ToDictionary(t => t.Name);
