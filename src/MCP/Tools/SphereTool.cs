@@ -20,6 +20,21 @@ namespace RhinoMCPServer.MCP.Tools
                     "radius": {
                         "type": "number",
                         "description": "The radius of the sphere."
+                    },
+                    "x": {
+                        "type": "number",
+                        "description": "The x-coordinate of the sphere center.",
+                        "default": 0
+                    },
+                    "y": {
+                        "type": "number",
+                        "description": "The y-coordinate of the sphere center.",
+                        "default": 0
+                    },
+                    "z": {
+                        "type": "number",
+                        "description": "The z-coordinate of the sphere center.",
+                        "default": 0
                     }
                 },
                 "required": ["radius"]
@@ -33,13 +48,34 @@ namespace RhinoMCPServer.MCP.Tools
                 throw new McpServerException("Missing required argument 'radius'");
             }
 
+            var x = request.Arguments.TryGetValue("x", out var xValue) ? Convert.ToDouble(xValue.ToString()) : 0.0;
+            var y = request.Arguments.TryGetValue("y", out var yValue) ? Convert.ToDouble(yValue.ToString()) : 0.0;
+            var z = request.Arguments.TryGetValue("z", out var zValue) ? Convert.ToDouble(zValue.ToString()) : 0.0;
+
+            var center = new Point3d(x, y, z);
             var rhinoDoc = RhinoDoc.ActiveDoc;
-            rhinoDoc.Objects.AddSphere(new Sphere(Point3d.Origin, Convert.ToDouble(radius?.ToString())), null);
+            var guid = rhinoDoc.Objects.AddSphere(new Sphere(center, Convert.ToDouble(radius?.ToString())), null);
             rhinoDoc.Views.Redraw();
+
+            var response = new
+            {
+                status = "success",
+                sphere = new
+                {
+                    radius = Convert.ToDouble(radius?.ToString()),
+                    guid = guid.ToString(),
+                    center = new
+                    {
+                        x = x,
+                        y = y,
+                        z = z
+                    }
+                }
+            };
 
             return Task.FromResult(new CallToolResponse()
             {
-                Content = [new Content() { Text = $"Created sphere with radius {radius}", Type = "text" }]
+                Content = [new Content() { Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true }), Type = "text" }]
             });
         }
     }

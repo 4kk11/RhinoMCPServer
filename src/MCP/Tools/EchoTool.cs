@@ -1,5 +1,6 @@
 using ModelContextProtocol.Protocol.Types;
 using ModelContextProtocol.Server;
+using Rhino;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -29,6 +30,8 @@ namespace RhinoMCPServer.MCP.Tools
             {
                 throw new McpServerException("Missing required argument 'message'");
             }
+
+            RhinoApp.WriteLine("Echo: " + message.ToString());
 
             return Task.FromResult(new CallToolResponse()
             {
