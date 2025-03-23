@@ -6,6 +6,10 @@ RhinocerosでModel Context Protocol (MCP)サーバーを実行するためのプ
 
 このプラグインは、[Model Context Protocol](https://github.com/modelcontextprotocol/csharp-sdk)を使用してRhinoの機能をMCPクライアントに公開します。WebSocket通信ではなく、Server-Sent Events (SSE)を採用することで、より効率的で軽量な双方向通信を実現しています。
 
+## 使用例
+### スケッチから作図 & 属性情報の付与
+https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
+
 ## システム要件
 
 - Rhino 9 WIP
