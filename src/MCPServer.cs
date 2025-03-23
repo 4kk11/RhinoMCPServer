@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Rhino;
 using Rhino.Geometry;
+using RhinoMCPServer.Tools;
 
 
 namespace RhinoMCPServer
@@ -24,12 +25,12 @@ namespace RhinoMCPServer
             // Use serilog
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Verbose() // Capture all log levels
-                .WriteTo.File(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", "TestServer_.log"),
+                .WriteTo.File(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", "MCPRhinoServer_.log"),
                     rollingInterval: RollingInterval.Day,
                     outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
                 .CreateLogger();
 
-            var logsPath = Path.Combine(AppContext.BaseDirectory, "testserver.log");
+            var logsPath = Path.Combine(AppContext.BaseDirectory, "mcp-rhino.log");
             return LoggerFactory.Create(builder =>
             {
                 builder.AddSerilog();
@@ -42,7 +43,7 @@ namespace RhinoMCPServer
 
             McpServerOptions options = new()
             {
-                ServerInfo = new Implementation() { Name = "TestServer", Version = "1.0.0" },
+                ServerInfo = new Implementation() { Name = "MCPRhinoServer", Version = "1.0.0" },
                 Capabilities = new ServerCapabilities()
                 {
                     Tools = new(),
@@ -57,155 +58,19 @@ namespace RhinoMCPServer
 
             Console.WriteLine("Registering handlers.");
 
-            #region Helped method
-            static CreateMessageRequestParams CreateRequestSamplingParams(string context, string uri, int maxTokens = 100)
-            {
-                return new CreateMessageRequestParams()
-                { 
-                    Messages = [new SamplingMessage()
-                    {
-                        Role = Role.User,
-                        Content = new Content()
-                        {
-                            Type = "text",
-                            Text = $"Resource {uri} context: {context}"
-                        }
-                    }],
-                    SystemPrompt = "You are a helpful test server.", 
-                    MaxTokens = maxTokens, 
-                    Temperature = 0.7f, 
-                    IncludeContext = ContextInclusion.ThisServer 
-                };
-            }
-            #endregion
+            var toolManager = new ToolManager();
 
             options.Capabilities = new()
             {
                 Tools = new()
                 {
-                    ListToolsHandler = (request, cancellationToken) =>
-                    {
-                        return Task.FromResult(new ListToolsResult()
-                        {
-                            Tools = 
-                            [
-                                new Tool()                
-                                {
-                                    Name = "echo",
-                                    Description = "Echoes the input back to the client.",
-                                    InputSchema = JsonSerializer.Deserialize<JsonElement>("""
-                                        {
-                                            "type": "object",
-                                            "properties": {
-                                                "message": {
-                                                    "type": "string",
-                                                    "description": "The input to echo back."
-                                                }
-                                            },
-                                            "required": ["message"]
-                                        }
-                                        """),
-                                },
-                                new Tool()
-                                {
-                                    Name = "sampleLLM",
-                                    Description = "Samples from an LLM using MCP's sampling feature.",
-                                    InputSchema = JsonSerializer.Deserialize<JsonElement>("""
-                                        {
-                                            "type": "object",
-                                            "properties": {
-                                                "prompt": {
-                                                    "type": "string",
-                                                    "description": "The prompt to send to the LLM"
-                                                },
-                                                "maxTokens": {
-                                                    "type": "number",
-                                                    "description": "Maximum number of tokens to generate"
-                                                }
-                                            },
-                                            "required": ["prompt", "maxTokens"]
-                                        }
-                                        """),
-                                },
-                                new Tool()
-                                {
-                                    Name = "sphere",
-                                    Description = "Creates a sphere.",
-                                    InputSchema = JsonSerializer.Deserialize<JsonElement>("""
-                                        {
-                                            "type": "object",
-                                            "properties": {
-                                                "radius": {
-                                                    "type": "number",
-                                                    "description": "The radius of the sphere."
-                                                }
-                                            },
-                                            "required": ["radius"]
-                                        }
-                                        """),
-                                }
-                            ]
-                        });
-                    },
-                    CallToolHandler = async (request, cancellationToken) =>
-                    {
-                        if (request.Params is null)
-                        {
-                            throw new McpServerException("Missing required parameter 'name'");
-                        }
-                        if (request.Params.Name == "echo")
-                        {
-                            if (request.Params.Arguments is null || !request.Params.Arguments.TryGetValue("message", out var message))
-                            {
-                                throw new McpServerException("Missing required argument 'message'");
-                            }
-                            return new CallToolResponse()
-                            {
-                                Content = [new Content() { Text = "Echo: " + message.ToString(), Type = "text" }]
-                            };
-                        }
-                        else if (request.Params.Name == "sampleLLM")
-                        {
-                            if (request.Params.Arguments is null || 
-                                !request.Params.Arguments.TryGetValue("prompt", out var prompt) || 
-                                !request.Params.Arguments.TryGetValue("maxTokens", out var maxTokens))
-                            {
-                                throw new McpServerException("Missing required arguments 'prompt' and 'maxTokens'");
-                            }
-                            var sampleResult = await server!.RequestSamplingAsync(CreateRequestSamplingParams(prompt?.ToString() ?? "", "sampleLLM", Convert.ToInt32(maxTokens?.ToString())),
-                                cancellationToken);
-
-                            return new CallToolResponse()
-                            {
-                                Content = [new Content() { Text = $"LLM sampling result: {sampleResult.Content.Text}", Type = "text" }]
-                            };
-                        }
-                        else if (request.Params.Name == "sphere")
-                        {
-                            if (request.Params.Arguments is null || !request.Params.Arguments.TryGetValue("radius", out var radius))
-                            {
-                                throw new McpServerException("Missing required argument 'radius'");
-                            }
-                            var rhinoDoc = RhinoDoc.ActiveDoc;
-
-                            rhinoDoc.Objects.AddSphere(new Sphere(Point3d.Origin, Convert.ToDouble(radius?.ToString())), null);
-                            rhinoDoc.Views.Redraw();
-
-                            return new CallToolResponse()
-                            {
-                                Content = [new Content() { Text = $"Created sphere with radius {radius}", Type = "text" }] 
-                            };
-                        }
-                        else
-                        {
-                            throw new McpServerException($"Unknown tool: {request.Params.Name}");
-                        }
-                    }
+                    ListToolsHandler = (request, cancellationToken) => toolManager.ListToolsAsync(),
+                    CallToolHandler = async (request, cancellationToken) => await toolManager.ExecuteToolAsync(request.Params, server),
                 },
             };
 
             using var loggerFactory = CreateLoggerFactory();
-            server = McpServerFactory.Create(new HttpListenerSseServerTransport("TestServer", port, loggerFactory), options, loggerFactory);
+            server = McpServerFactory.Create(new HttpListenerSseServerTransport("MCPRhinoServer", port, loggerFactory), options, loggerFactory);
 
             Console.WriteLine("Server initialized.");
 
