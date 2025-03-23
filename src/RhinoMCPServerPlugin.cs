@@ -8,6 +8,7 @@ namespace RhinoMCPServer
         public RhinoMCPServerPlugin()
         {
             Instance = this;
+            Console.WriteLine("RhinoMCPServerPlugin");
         }
         
         public static RhinoMCPServerPlugin Instance { get; private set; }
