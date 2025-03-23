@@ -9,19 +9,19 @@ using RhinoMCPServer.MCP;
 
 namespace RhinoMCPServer.Commands
 {
-    public class StartMCPServerCommand : Command
+    public class MCPServerCommand : Command
     {
         private static CancellationTokenSource? _cancellationTokenSource;
         private static Task? _serverTask;
 
-        public StartMCPServerCommand()
+        public MCPServerCommand()
         {
             Instance = this;
         }
 
-        public static StartMCPServerCommand? Instance { get; private set; }
+        public static MCPServerCommand? Instance { get; private set; }
 
-        public override string EnglishName => "StartMCPServer";
+        public override string EnglishName => "MCPServer";
 
         protected override Result RunCommand(RhinoDoc doc, RunMode mode)
         {
