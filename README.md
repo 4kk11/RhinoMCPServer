@@ -4,7 +4,7 @@ A plugin for executing Model Context Protocol (MCP) server in Rhinoceros. It pro
 
 ## Overview
 
-This plugin exposes Rhino's functionality to MCP clients using the [Model Context Protocol](https://github.com/modelcontextprotocol/csharp-sdk). Instead of WebSocket communication, it adopts Server-Sent Events (SSE) to achieve more efficient and lightweight bidirectional communication.
+This plugin exposes Rhino's functionality to MCP clients using the official [Model Context Protocol C# SDK](https://github.com/modelcontextprotocol/csharp-sdk). Instead of WebSocket communication, it adopts Server-Sent Events (SSE) to achieve more efficient and lightweight bidirectional communication.
 
 ## Usage Example
 ### Drawing from Sketch & Attribute Information Assignment
