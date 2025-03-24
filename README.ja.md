@@ -16,10 +16,32 @@ RhinocerosでModel Context Protocol (MCP)サーバーを実行するためのプ
 - `RhinoMCPTools.Misc`: ユーティリティツール群
 
 ```mermaid
-graph TD
-    A[RhinoMCPServer.Plugin] --> B[RhinoMCPServer.Common]
-    C[RhinoMCPTools.Basic] --> B
-    D[RhinoMCPTools.Misc] --> B
+graph TB
+    subgraph プラグイン
+        A[RhinoMCPServer.Plugin<br>Rhinoプラグイン本体]
+    end
+
+    subgraph 共通基盤
+        B[RhinoMCPServer.Common<br>MCPツールの基盤]
+    end
+
+    subgraph ツール
+        C[RhinoMCPTools.Basic<br>基本ジオメトリツール]
+        D[RhinoMCPTools.Misc<br>ユーティリティツール]
+    end
+
+
+    A --> B
+    C --> B
+    D --> B
+
+    classDef plugin fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef common fill:#bfb,stroke:#333,stroke-width:2px;
+    classDef tools fill:#bbf,stroke:#333,stroke-width:2px;
+
+    class A plugin;
+    class B common;
+    class C,D tools;
 ```
 
 ## プラグイン拡張性

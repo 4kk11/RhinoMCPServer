@@ -16,10 +16,38 @@ The project consists of the following libraries:
 - `RhinoMCPTools.Misc`: Utility tools
 
 ```mermaid
-graph TD
-    A[RhinoMCPServer.Plugin] --> B[RhinoMCPServer.Common]
-    C[RhinoMCPTools.Basic] --> B
-    D[RhinoMCPTools.Misc] --> B
+graph TB
+    subgraph Plugin
+        A[RhinoMCPServer.Plugin<br>Main Plugin]
+    end
+
+    subgraph Common
+        B[RhinoMCPServer.Common<br>MCP Tool Foundation]
+    end
+
+    subgraph Tools
+        C[RhinoMCPTools.Basic<br>Basic Geometry Tools]
+        D[RhinoMCPTools.Misc<br>Utility Tools]
+    end
+
+    R[RhinoCommon]
+
+    A --> B
+    C --> B
+    D --> B
+    A --> R
+    C --> R
+    D --> R
+
+    classDef plugin fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef common fill:#bfb,stroke:#333,stroke-width:2px;
+    classDef tools fill:#bbf,stroke:#333,stroke-width:2px;
+    classDef rhino fill:#ddd,stroke:#333,stroke-width:2px;
+
+    class A plugin;
+    class B common;
+    class C,D tools;
+    class R rhino;
 ```
 
 ## Plugin Extensibility
