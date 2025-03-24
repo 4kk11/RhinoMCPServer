@@ -17,23 +17,30 @@ RhinocerosでModel Context Protocol (MCP)サーバーを実行するためのプ
 
 ```mermaid
 graph TB
-    subgraph プラグイン
-        A[RhinoMCPServer.Plugin<br>Rhinoプラグイン本体]
+    subgraph MCPクライアント
+      X[Claude Desktopなど...]
     end
 
-    subgraph 共通基盤
-        B[RhinoMCPServer.Common<br>MCPツールの基盤]
-    end
+    subgraph MCPサーバー
+      subgraph プラグイン
+          A[RhinoMCPServer.Plugin<br>Rhinoプラグイン本体]
+      end
 
-    subgraph ツール
-        C[RhinoMCPTools.Basic<br>基本ジオメトリツール]
-        D[RhinoMCPTools.Misc<br>ユーティリティツール]
+      subgraph 共通基盤
+          B[RhinoMCPServer.Common<br>MCPツールの基盤]
+      end
+
+      subgraph "MCPツール(動的に拡張可能)"
+          C[RhinoMCPTools.Basic<br>基本ジオメトリツール]
+          D[RhinoMCPTools.Misc<br>ユーティリティツール]
+      end
     end
 
 
     A --> B
     C --> B
     D --> B
+    X -->|"SSE接続"| A
 
     classDef plugin fill:#f9f,stroke:#333,stroke-width:2px;
     classDef common fill:#bfb,stroke:#333,stroke-width:2px;
@@ -65,7 +72,7 @@ https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
 
 ### MCPサーバーの起動
 
-1. Rhinoのコマンドラインに`StartMCPServerCommand`と入力します
+1. Rhinoのコマンドラインに`StartMCPServer`と入力します
 2. ポート番号の設定
    - デフォルト：3001（Enterキーを押すと自動的に使用）
    - カスタム：任意のポート番号を入力可能

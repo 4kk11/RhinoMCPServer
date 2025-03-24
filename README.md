@@ -17,37 +17,38 @@ The project consists of the following libraries:
 
 ```mermaid
 graph TB
-    subgraph Plugin
-        A[RhinoMCPServer.Plugin<br>Main Plugin]
+    subgraph MCP Client
+      X[Claude Desktop etc...]
     end
 
-    subgraph Common
-        B[RhinoMCPServer.Common<br>MCP Tool Foundation]
+    subgraph MCP Server
+      subgraph Plugin
+          A[RhinoMCPServer.Plugin<br>Main Plugin]
+      end
+
+      subgraph Common
+          B[RhinoMCPServer.Common<br>MCP Tool Foundation]
+      end
+
+      subgraph "MCP Tools (Dynamically Extensible)"
+          C[RhinoMCPTools.Basic<br>Basic Geometry Tools]
+          D[RhinoMCPTools.Misc<br>Utility Tools]
+      end
     end
 
-    subgraph Tools
-        C[RhinoMCPTools.Basic<br>Basic Geometry Tools]
-        D[RhinoMCPTools.Misc<br>Utility Tools]
-    end
-
-    R[RhinoCommon]
 
     A --> B
     C --> B
     D --> B
-    A --> R
-    C --> R
-    D --> R
+    X -->|"SSE connection"| A
 
     classDef plugin fill:#f9f,stroke:#333,stroke-width:2px;
     classDef common fill:#bfb,stroke:#333,stroke-width:2px;
     classDef tools fill:#bbf,stroke:#333,stroke-width:2px;
-    classDef rhino fill:#ddd,stroke:#333,stroke-width:2px;
 
     class A plugin;
     class B common;
     class C,D tools;
-    class R rhino;
 ```
 
 ## Plugin Extensibility
@@ -71,7 +72,7 @@ https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
 
 ### Starting the MCP Server
 
-1. Enter `StartMCPServerCommand` in Rhino's command line
+1. Enter `StartMCPServer` in Rhino's command line
 2. Port number configuration
    - Default: 3001 (automatically used when pressing Enter)
    - Custom: Any port number can be entered
