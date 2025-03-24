@@ -42,9 +42,9 @@ graph TB
     D --> B
     X -->|"SSE connection"| A
 
-    classDef plugin fill:#d8d,stroke:#333,stroke-width:2px;
-    classDef common fill:#9d9,stroke:#333,stroke-width:2px;
-    classDef tools fill:#99d,stroke:#333,stroke-width:2px;
+    classDef plugin fill:#b6b,stroke:#333,stroke-width:2px;
+    classDef common fill:#7b7,stroke:#333,stroke-width:2px;
+    classDef tools fill:#77b,stroke:#333,stroke-width:2px;
 
     class A plugin;
     class B common;
