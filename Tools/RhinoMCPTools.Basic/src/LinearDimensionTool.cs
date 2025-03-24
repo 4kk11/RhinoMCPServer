@@ -102,20 +102,24 @@ namespace RhinoMCPTools.Basic
 
             var rhinoDoc = RhinoDoc.ActiveDoc;
             
-            // アクティブなビューポートから構築平面を取得
-            var viewport = rhinoDoc.Views.ActiveView.ActiveViewport;
-            var plane = viewport.ConstructionPlane();
-
-            // 3D点を2D点に変換
-            var start2d = new Point2d(startPoint.X, startPoint.Y);
-            var end2d = new Point2d(endPoint.X, endPoint.Y);
-
-            // オフセット位置を計算（2D）
+            // 2点を通る線に平行なplaneを作成
             var dimensionLine = endPoint - startPoint;
             var dimensionNormal = Vector3d.CrossProduct(dimensionLine, Vector3d.ZAxis);
             dimensionNormal.Unitize();
-            var offsetPoint = startPoint + dimensionNormal * offset;
-            var dimLinePoint2d = new Point2d(offsetPoint.X, offsetPoint.Y);
+            var plane = new Plane(startPoint, dimensionLine, dimensionNormal);
+
+            // 3D点を2D点に変換
+            double u, v;
+            plane.ClosestParameter(startPoint, out u, out v);
+            Point2d start2d = new Point2d(u, v);
+            plane.ClosestParameter(endPoint, out u, out v);
+            Point2d end2d = new Point2d(u, v);
+
+            // オフセット位置を計算（2D）
+            var dimLinePoint2d = new Point2d(0, offset);
+
+            Console.WriteLine($"Start: {startPoint}, End: {endPoint}, Offset: {offset}");
+            Console.WriteLine($"Plane: {plane}, Start2D: {start2d}, End2D: {end2d}, DimLine2D: {dimLinePoint2d}");
 
             // 寸法線オブジェクトを作成
             var dimension = new LinearDimension(
