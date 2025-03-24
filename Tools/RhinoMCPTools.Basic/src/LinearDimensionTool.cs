@@ -137,7 +137,8 @@ namespace RhinoMCPTools.Basic
                     start = new { x = startX, y = startY, z = startZ },
                     end = new { x = endX, y = endY, z = endZ },
                     offset = offset,
-                    length = dimensionLine.Length
+                    length = dimensionLine.Length,
+                    scale = dimension.DimensionScale
                 }
             };
 
