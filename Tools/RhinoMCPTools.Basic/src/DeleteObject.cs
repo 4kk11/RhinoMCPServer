@@ -1,11 +1,12 @@
 using ModelContextProtocol.Protocol.Types;
 using ModelContextProtocol.Server;
 using Rhino;
+using RhinoMCPServer.Common;
 using System;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace RhinoMCPServer.MCP.Tools
+namespace RhinoMCPTools.Basic
 {
     public class DeleteObjectTool : IMCPTool
     {

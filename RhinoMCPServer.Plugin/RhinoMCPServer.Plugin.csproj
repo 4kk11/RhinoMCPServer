@@ -1,5 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-	
+
   <PropertyGroup>
     <TargetFrameworks>net8.0</TargetFrameworks>
     <EnableDynamicLoading>true</EnableDynamicLoading>
@@ -16,13 +16,12 @@
     <Description>Description of RhinoMCPServer</Description>
   </PropertyGroup>
 
-  
   <ItemGroup>
-    <PackageReference Include="ModelContextProtocol" Version="0.1.0-preview.1.25171.12" />
     <PackageReference Include="RhinoCommon" Version="8.0.23304.9001" ExcludeAssets="runtime" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.3" />
-    <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.0" />
-    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../RhinoMCPServer.Common/RhinoMCPServer.Common.csproj" />
   </ItemGroup>
 
   <!-- Windows -->
@@ -35,11 +34,14 @@
     <MyDestinationFolder>$(HOME)/Library/Application Support/McNeel/Rhinoceros/9.0/MacPlugins/RhinoMCPServer</MyDestinationFolder>
   </PropertyGroup>
 
+  <!-- ビルド後にプラグインとツールをコピー -->
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-		<ItemGroup>
-			<MySourceFiles Include="$(TargetDir)\**" />
-		</ItemGroup>
-		<Copy SourceFiles="@(MySourceFiles)" DestinationFolder="$(MyDestinationFolder)" />
-	</Target>
+    <ItemGroup>
+      <MySourceFiles Include="$(TargetDir)\**" />
+      <ToolFiles Include="../Tools\**\bin\$(Configuration)\net8.0\*.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(MySourceFiles)" DestinationFolder="$(MyDestinationFolder)" />
+    <Copy SourceFiles="@(ToolFiles)" DestinationFolder="$(MyDestinationFolder)\Tools" />
+  </Target>
   
 </Project>

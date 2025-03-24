@@ -1,6 +1,7 @@
 using ModelContextProtocol.Protocol.Types;
 using ModelContextProtocol.Server;
 using Rhino;
+using RhinoMCPServer.Common;
 using System.Text.Json;
 using System.Threading.Tasks;
 

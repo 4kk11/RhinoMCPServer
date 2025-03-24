@@ -1,17 +1,19 @@
+using System;
+using System.Threading.Tasks;
 using ModelContextProtocol.Protocol.Types;
 using ModelContextProtocol.Server;
 using Rhino;
 using Rhino.Geometry;
-using System;
 using System.Text.Json;
-using System.Threading.Tasks;
+using RhinoMCPServer.Common;
 
-namespace RhinoMCPServer.MCP.Tools
+namespace RhinoMCPTools.Basic
 {
+    [MCPToolPlugin("sphere")]
     public class SphereTool : IMCPTool
     {
         public string Name => "sphere";
-        public string Description => "Creates a sphere.";
+        public string Description => "Creates a sphere in Rhino.";
 
         public JsonElement InputSchema => JsonSerializer.Deserialize<JsonElement>("""
             {
@@ -54,7 +56,8 @@ namespace RhinoMCPServer.MCP.Tools
 
             var center = new Point3d(x, y, z);
             var rhinoDoc = RhinoDoc.ActiveDoc;
-            var guid = rhinoDoc.Objects.AddSphere(new Sphere(center, Convert.ToDouble(radius?.ToString())), null);
+            var sphereGeometry = new Rhino.Geometry.Sphere(center, Convert.ToDouble(radius?.ToString()));
+            var guid = rhinoDoc.Objects.AddSphere(sphereGeometry, null);
             rhinoDoc.Views.Redraw();
 
             var response = new

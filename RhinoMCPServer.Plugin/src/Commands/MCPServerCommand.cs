@@ -5,9 +5,9 @@ using Rhino;
 using Rhino.Commands;
 using Rhino.Input;
 using Rhino.Input.Custom;
-using RhinoMCPServer.MCP;
+using RhinoMCPServer.Common;
 
-namespace RhinoMCPServer.Commands
+namespace RhinoMCPServer.Plugin.Commands
 {
     public class MCPServerCommand : Command
     {
