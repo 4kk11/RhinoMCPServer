@@ -6,6 +6,59 @@ RhinocerosでModel Context Protocol (MCP)サーバーを実行するためのプ
 
 このプラグインは、公式の[Model Context Protocol C# SDK](https://github.com/modelcontextprotocol/csharp-sdk)を使用してRhinoの機能をMCPクライアントに公開します。WebSocket通信ではなく、Server-Sent Events (SSE)を採用することで、より効率的で軽量な双方向通信を実現しています。
 
+## プロジェクト構成
+
+プロジェクトは以下のライブラリで構成されています：
+
+- `RhinoMCPServer.Common`: MCPツールの共通基盤（インターフェース、ツール管理など）
+- `RhinoMCPServer.Plugin`: Rhinoプラグインの本体
+- `RhinoMCPTools.Basic`: 基本的なジオメトリ操作ツール群
+- `RhinoMCPTools.Misc`: ユーティリティツール群
+
+```mermaid
+graph TB
+    subgraph MCPクライアント
+      X[Claude Desktopなど...]
+    end
+
+    subgraph MCPサーバー
+      subgraph プラグイン
+          A[RhinoMCPServer.Plugin<br>Rhinoプラグイン本体]
+      end
+
+      subgraph 共通基盤
+          B[RhinoMCPServer.Common<br>MCPツールの基盤]
+      end
+
+      subgraph "MCPツール(動的に拡張可能)"
+          C[RhinoMCPTools.Basic<br>基本ジオメトリツール]
+          D[RhinoMCPTools.Misc<br>ユーティリティツール]
+      end
+    end
+
+
+    A --> B
+    C --> B
+    D --> B
+    X -->|"SSE接続"| A
+
+    classDef plugin fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef common fill:#bfb,stroke:#333,stroke-width:2px;
+    classDef tools fill:#bbf,stroke:#333,stroke-width:2px;
+
+    class A plugin;
+    class B common;
+    class C,D tools;
+```
+
+## プラグイン拡張性
+
+MCPツールはdllから動的にロードされる仕組みを採用しており：
+
+- 新規ツールをdllとして追加するだけで機能拡張が可能
+- プラグインの追加・削除が容易
+- サーバー再起動で新しいツールを自動認識
+
 ## 使用例
 ### スケッチから作図 & 属性情報の付与
 https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
@@ -19,7 +72,7 @@ https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
 
 ### MCPサーバーの起動
 
-1. Rhinoのコマンドラインに`StartMCPServerCommand`と入力します
+1. Rhinoのコマンドラインに`StartMCPServer`と入力します
 2. ポート番号の設定
    - デフォルト：3001（Enterキーを押すと自動的に使用）
    - カスタム：任意のポート番号を入力可能

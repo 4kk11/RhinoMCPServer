@@ -11,12 +11,8 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Collections.Generic;
 using System.Linq;
-using Rhino;
-using Rhino.Geometry;
-using RhinoMCPServer.MCP.Tools;
 
-
-namespace RhinoMCPServer.MCP
+namespace RhinoMCPServer.Common
 {
     public static class MCPServer
     {
@@ -93,5 +89,4 @@ namespace RhinoMCPServer.MCP
             }
         }
     }
-
 }

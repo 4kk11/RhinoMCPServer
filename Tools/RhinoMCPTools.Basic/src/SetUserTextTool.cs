@@ -1,11 +1,12 @@
+using System;
+using System.Threading.Tasks;
 using ModelContextProtocol.Protocol.Types;
 using ModelContextProtocol.Server;
 using Rhino;
-using System;
 using System.Text.Json;
-using System.Threading.Tasks;
+using RhinoMCPServer.Common;
 
-namespace RhinoMCPServer.MCP.Tools
+namespace RhinoMCPTools.Basic
 {
     public class SetUserTextTool : IMCPTool
     {

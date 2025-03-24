@@ -6,6 +6,59 @@ A plugin for executing Model Context Protocol (MCP) server in Rhinoceros. It pro
 
 This plugin exposes Rhino's functionality to MCP clients using the official [Model Context Protocol C# SDK](https://github.com/modelcontextprotocol/csharp-sdk). Instead of WebSocket communication, it adopts Server-Sent Events (SSE) to achieve more efficient and lightweight bidirectional communication.
 
+## Project Structure
+
+The project consists of the following libraries:
+
+- `RhinoMCPServer.Common`: Common foundation for MCP tools (interfaces, tool management, etc.)
+- `RhinoMCPServer.Plugin`: Main Rhino plugin implementation
+- `RhinoMCPTools.Basic`: Basic geometry operation tools
+- `RhinoMCPTools.Misc`: Utility tools
+
+```mermaid
+graph TB
+    subgraph MCP Client
+      X[Claude Desktop etc...]
+    end
+
+    subgraph MCP Server
+      subgraph Plugin
+          A[RhinoMCPServer.Plugin<br>Main Plugin]
+      end
+
+      subgraph Common
+          B[RhinoMCPServer.Common<br>MCP Tool Foundation]
+      end
+
+      subgraph "MCP Tools (Dynamically Extensible)"
+          C[RhinoMCPTools.Basic<br>Basic Geometry Tools]
+          D[RhinoMCPTools.Misc<br>Utility Tools]
+      end
+    end
+
+
+    A --> B
+    C --> B
+    D --> B
+    X -->|"SSE connection"| A
+
+    classDef plugin fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef common fill:#bfb,stroke:#333,stroke-width:2px;
+    classDef tools fill:#bbf,stroke:#333,stroke-width:2px;
+
+    class A plugin;
+    class B common;
+    class C,D tools;
+```
+
+## Plugin Extensibility
+
+MCP tools are dynamically loaded from DLLs, which means:
+
+- New tools can be added by simply including new DLLs
+- Easy addition and removal of plugins
+- New tools are automatically recognized upon server restart
+
 ## Usage Example
 ### Drawing from Sketch & Attribute Information Assignment
 https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
@@ -19,7 +72,7 @@ https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
 
 ### Starting the MCP Server
 
-1. Enter `StartMCPServerCommand` in Rhino's command line
+1. Enter `StartMCPServer` in Rhino's command line
 2. Port number configuration
    - Default: 3001 (automatically used when pressing Enter)
    - Custom: Any port number can be entered

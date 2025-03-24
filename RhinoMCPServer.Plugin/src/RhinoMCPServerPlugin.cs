@@ -1,7 +1,7 @@
 ﻿using System;
 using Rhino;
 
-namespace RhinoMCPServer
+namespace RhinoMCPServer.Plugin
 {
     public class RhinoMCPServerPlugin : Rhino.PlugIns.PlugIn
     {
