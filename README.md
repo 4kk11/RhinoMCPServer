@@ -6,6 +6,30 @@ A plugin for executing Model Context Protocol (MCP) server in Rhinoceros. It pro
 
 This plugin exposes Rhino's functionality to MCP clients using the official [Model Context Protocol C# SDK](https://github.com/modelcontextprotocol/csharp-sdk). Instead of WebSocket communication, it adopts Server-Sent Events (SSE) to achieve more efficient and lightweight bidirectional communication.
 
+## Project Structure
+
+The project consists of the following libraries:
+
+- `RhinoMCPServer.Common`: Common foundation for MCP tools (interfaces, tool management, etc.)
+- `RhinoMCPServer.Plugin`: Main Rhino plugin implementation
+- `RhinoMCPTools.Basic`: Basic geometry operation tools
+- `RhinoMCPTools.Misc`: Utility tools
+
+```mermaid
+graph TD
+    A[RhinoMCPServer.Plugin] --> B[RhinoMCPServer.Common]
+    C[RhinoMCPTools.Basic] --> B
+    D[RhinoMCPTools.Misc] --> B
+```
+
+## Plugin Extensibility
+
+MCP tools are dynamically loaded from DLLs, which means:
+
+- New tools can be added by simply including new DLLs
+- Easy addition and removal of plugins
+- New tools are automatically recognized upon server restart
+
 ## Usage Example
 ### Drawing from Sketch & Attribute Information Assignment
 https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
