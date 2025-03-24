@@ -9,6 +9,7 @@ using Rhino.Geometry;
 using System.Text.Json;
 using RhinoMCPServer.Common;
 using Rhino.DocObjects;
+using System.Xml.Schema;
 
 namespace RhinoMCPTools.Basic
 {
@@ -21,10 +22,10 @@ namespace RhinoMCPTools.Basic
             {
                 "type": "object",
                 "properties": {
-                    "offset": {
+                    "font_height": {
                         "type": "number",
-                        "description": "Offset distance for the text dot from the object's center.",
-                        "default": 1.0
+                        "description": "Font height for the text dot.",
+                        "default": 12.0
                     }
                 }
             }
@@ -36,38 +37,45 @@ namespace RhinoMCPTools.Basic
             var activeView = rhinoDoc.Views.ActiveView;
             var viewport = activeView.ActiveViewport;
 
-            // オフセット値を取得（デフォルト値: 1.0）
-            var offset = 1.0;
-            if (request.Arguments != null && request.Arguments.TryGetValue("offset", out var offsetValue))
-            {
-                offset = Convert.ToDouble(offsetValue.ToString());
-            }
+            // パラメータの取得（デフォルト値を設定）
+            var fontHeight = 12.0;
 
-            // ドキュメント内のすべてのオブジェクトを取得
-            var command = "SelVisible " + " _Enter";
-            RhinoApp.RunScript(command, true);
-            var selectedObjects = rhinoDoc.Objects.GetSelectedObjects(false, false);
-            var selectedObjectIds = selectedObjects.Select(obj => obj.Id).ToList();
-            rhinoDoc.Objects.UnselectAll();
+            if (request.Arguments != null)
+            {
+                if (request.Arguments.TryGetValue("font_height", out var fontHeightValue))
+                {
+                    fontHeight = Convert.ToDouble(fontHeightValue.ToString());
+                }
+            }
+            
+            List<Guid> selectedObjectIds = new List<Guid>();
+            
+            // メインスレッドでSelVisibleコマンドを実行
+            RhinoApp.InvokeOnUiThread(() =>
+            {
+                var command = "SelVisible " + " _Enter";
+                RhinoApp.RunScript(command, true);
+                var selectedObjects = rhinoDoc.Objects.GetSelectedObjects(false, false);
+                selectedObjectIds.AddRange(selectedObjects.Select(obj => obj.Id));
+                rhinoDoc.Objects.UnselectAll();
+            });
 
             var createdDots = new List<(string guid, Point3d location)>();
-
             foreach (var id in selectedObjectIds)
             {
                 var obj = rhinoDoc.Objects.Find(id);
                 // オブジェクトのバウンディングボックスの中心を取得
                 var bbox = obj.Geometry.GetBoundingBox(true);
                 var center = bbox.Center;
-                
-                // オフセットを適用（Z方向に）
-                var dotLocation = new Point3d(center.X, center.Y, center.Z + offset);
+                var dotLocation = new Point3d(center.X, center.Y, center.Z);
                 
                 // テキストドットを作成
                 var textDot = new TextDot(obj.Id.ToString(), dotLocation);
-                textDot.FontHeight = 12;
+                textDot.FontHeight = (int)fontHeight;
                 var dotGuid = rhinoDoc.Objects.AddTextDot(textDot);
+                var guid = dotGuid.ToString();
 
-                createdDots.Add((dotGuid.ToString(), dotLocation));
+                createdDots.Add((guid, dotLocation));
             }
 
             rhinoDoc.Views.Redraw();
