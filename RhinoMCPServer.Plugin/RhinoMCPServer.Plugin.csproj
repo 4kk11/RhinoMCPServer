@@ -38,7 +38,7 @@
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <ItemGroup>
       <MySourceFiles Include="$(TargetDir)\**" />
-      <ToolFiles Include="../Tools\**\bin\$(Configuration)\net8.0\*.dll" />
+      <ToolFiles Include="../Tools/**/bin/$(Configuration)/net8.0/*.dll" />
     </ItemGroup>
     <Copy SourceFiles="@(MySourceFiles)" DestinationFolder="$(MyDestinationFolder)" />
     <Copy SourceFiles="@(ToolFiles)" DestinationFolder="$(MyDestinationFolder)\Tools" />
