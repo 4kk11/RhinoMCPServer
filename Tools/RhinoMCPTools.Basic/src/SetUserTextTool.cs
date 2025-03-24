@@ -8,7 +8,6 @@ using RhinoMCPServer.Common;
 
 namespace RhinoMCPTools.Basic
 {
-    [MCPToolPlugin("set_user_text")]
     public class SetUserTextTool : IMCPTool
     {
         public string Name => "set_user_text";

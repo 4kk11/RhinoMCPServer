@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Loader;
+using Rhino;
 
 namespace RhinoMCPServer.Common
 {
@@ -47,17 +48,25 @@ namespace RhinoMCPServer.Common
             using var fs = new FileStream(dllPath, FileMode.Open, FileAccess.Read);
             var assembly = loadContext.LoadFromStream(fs);
 
-            // プラグイン属性を持つ型を検索
-            foreach (var type in assembly.GetTypes())
+            // IMCPToolを実装している全ての型を検索
+            var toolTypes = assembly.GetTypes()
+                .Where(t => typeof(IMCPTool).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
+
+            foreach (var type in toolTypes)
             {
-                var attr = type.GetCustomAttribute<MCPToolPluginAttribute>();
-                if (attr != null)
+                try
                 {
                     // プラグインのインスタンスを作成
                     if (Activator.CreateInstance(type) is IMCPTool tool)
                     {
+                        Console.WriteLine($"Loaded tool: {tool.Name} ({type.Name})");
                         _loadedTools[tool.Name] = tool;
                     }
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Failed to create instance of tool {type.Name}: {ex.Message}");
+                    RhinoApp.WriteLine($"Failed to create instance of tool {type.Name}: {ex.Message}");
                 }
             }
         }

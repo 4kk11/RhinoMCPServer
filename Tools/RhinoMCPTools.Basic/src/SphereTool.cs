@@ -9,7 +9,6 @@ using RhinoMCPServer.Common;
 
 namespace RhinoMCPTools.Basic
 {
-    [MCPToolPlugin("sphere")]
     public class SphereTool : IMCPTool
     {
         public string Name => "sphere";

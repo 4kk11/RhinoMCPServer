@@ -31,21 +31,4 @@ namespace RhinoMCPServer.Common
         /// </summary>
         Task<CallToolResponse> ExecuteAsync(CallToolRequestParams request, IMcpServer? server);
     }
-
-    /// <summary>
-    /// MCPツールプラグインを識別するための属性
-    /// </summary>
-    [AttributeUsage(AttributeTargets.Class)]
-    public class MCPToolPluginAttribute : Attribute
-    {
-        /// <summary>
-        /// プラグインの名前
-        /// </summary>
-        public string Name { get; }
-
-        public MCPToolPluginAttribute(string name)
-        {
-            Name = name;
-        }
-    }
 }
