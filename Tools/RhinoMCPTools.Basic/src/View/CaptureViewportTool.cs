@@ -115,21 +115,14 @@ namespace RhinoMCPTools.Basic
 
             var base64Image = Convert.ToBase64String(outputStream.ToArray());
 
-            var response = new
-            {
-                status = "success",
-                image = new
-                {
-                    format,
-                    width = image.Width,
-                    height = image.Height,
-                    data = $"data:image/{format};base64,{base64Image}"
-                }
-            };
-
             return new CallToolResponse()
             {
-                Content = [new Content() { Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true }), Type = "text" }]
+                Content = [new Content()
+                {
+                    Type = "image",
+                    Data = base64Image,
+                    MimeType = format == "jpg" ? "image/jpeg" : "image/png"
+                }]
             };
         }
     }
