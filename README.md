@@ -101,6 +101,7 @@ Basic geometry operation and drafting tools.
       - `y` (number, required) - Y coordinate
       - `z` (number, optional, default: 0) - Z coordinate
     - `offset` (number, optional, default: 1.0) - Offset distance for dimension line
+    - `scale` (number, optional, default: 1.0) - Dimension scale value (must be greater than 0)
 
 - **set_dimension_scale**
   - Function: Sets the dimension scale of dimension objects
@@ -118,10 +119,20 @@ Basic geometry operation and drafting tools.
     - `y` (number, optional, default: 0) - Y coordinate of sphere center
     - `z` (number, optional, default: 0) - Z coordinate of sphere center
 
+- **rectangle**
+  - Function: Create a rectangle from center point, width (x-direction), and height (y-direction)
+  - Parameters:
+    - `center` (object, required) - Center point of the rectangle
+      - `x` (number, required) - X coordinate
+      - `y` (number, required) - Y coordinate
+      - `z` (number, optional, default: 0) - Z coordinate
+    - `width` (number, required) - Width of the rectangle (x-direction, must be greater than 0)
+    - `height` (number, required) - Height of the rectangle (y-direction, must be greater than 0)
+
 - **polyline**
   - Function: Create a polyline from specified points
   - Parameters:
-    - `points` (array, required, minItems: 2) - Array of points defining polyline vertices
+    - `points` (array, required) - Array of points defining polyline vertices (minimum 2 points required)
       - Parameters for each point:
         - `x` (number, required) - X coordinate
         - `y` (number, required) - Y coordinate
@@ -152,7 +163,7 @@ Basic geometry operation and drafting tools.
   - Function: Sets the font height of text dots
   - Parameters:
     - `guids` (array of string, required) - Array of GUIDs of the text dots to modify
-    - `font_height` (number, required) - New font height (must be greater than or equal to 1)
+    - `font_height` (number, required) - New font height (minimum value: 1)
 
 - **set_user_text**
   - Function: Set user text attributes for a Rhino object
@@ -170,6 +181,8 @@ Basic geometry operation and drafting tools.
     - `width` (number, optional) - The width of the captured image in pixels (uses current viewport width if not specified)
     - `height` (number, optional) - The height of the captured image in pixels (uses current viewport height if not specified)
     - `format` (string, optional, enum: ["png", "jpg"], default: "png") - The image format to use
+    - `show_object_labels` (boolean, optional, default: true) - Whether to display simple symbol labels (A, B, C..., AA, AB...) for objects in the viewport
+    - `font_height` (number, optional, default: 20.0) - Font size for the labels
 
 ### RhinoMCPTools.Misc
 Utility tools.

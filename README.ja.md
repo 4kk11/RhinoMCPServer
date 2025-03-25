@@ -101,6 +101,7 @@ https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
       - `y` (number, required) - Y座標
       - `z` (number, optional, default: 0) - Z座標
     - `offset` (number, optional, default: 1.0) - 寸法線のオフセット距離
+    - `scale` (number, optional, default: 1.0) - 寸法のスケール値（0より大きい値）
 
 - **set_dimension_scale**
   - 機能：寸法オブジェクトのスケールを設定
@@ -118,10 +119,20 @@ https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
     - `y` (number, optional, default: 0) - 球体の中心のY座標
     - `z` (number, optional, default: 0) - 球体の中心のZ座標
 
+- **rectangle**
+  - 機能：中心点、幅（X方向）、高さ（Y方向）から長方形を作成
+  - パラメータ：
+    - `center` (object, required) - 長方形の中心点
+      - `x` (number, required) - X座標
+      - `y` (number, required) - Y座標
+      - `z` (number, optional, default: 0) - Z座標
+    - `width` (number, required) - 長方形の幅（X方向、0より大きい値）
+    - `height` (number, required) - 長方形の高さ（Y方向、0より大きい値）
+
 - **polyline**
   - 機能：指定された点列から折れ線を作成
   - パラメータ：
-    - `points` (array, required, minItems: 2) - 折れ線の頂点を定義する点の配列
+    - `points` (array, required) - 折れ線の頂点を定義する点の配列（最低2点必要）
       - 各点のパラメータ：
         - `x` (number, required) - X座標
         - `y` (number, required) - Y座標
@@ -152,7 +163,7 @@ https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
   - 機能：テキストドットのフォントサイズを設定
   - パラメータ：
     - `guids` (array of string, required) - 対象のテキストドットのGUID配列
-    - `font_height` (number, required) - 新しいフォントサイズ（1以上）
+    - `font_height` (number, required) - 新しいフォントサイズ（最小値: 1）
 
 - **set_user_text**
   - 機能：Rhinoオブジェクトにユーザーテキスト属性を設定
@@ -170,8 +181,8 @@ https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
     - `width` (number, optional) - キャプチャ画像の幅（ピクセル単位、未指定の場合は現在のビューポート幅）
     - `height` (number, optional) - キャプチャ画像の高さ（ピクセル単位、未指定の場合は現在のビューポート高さ）
     - `format` (string, optional, enum: ["png", "jpg"], default: "png") - 出力画像フォーマット
-    - `show_guid_text_dots` (boolean, optional, default: false) - オブジェクトのGUIDを表示するテキストドットを一時的に表示するかどうか
-    - `font_height` (number, optional, default: 12.0) - GUIDテキストドットのフォントサイズ
+    - `show_object_labels` (boolean, optional, default: true) - オブジェクトにシンプルなシンボルラベル（A, B, C..., AA, AB...）を表示するかどうか
+    - `font_height` (number, optional, default: 20.0) - ラベルのフォントサイズ
 
 ### RhinoMCPTools.Misc
 ユーティリティ機能を提供するツール群です。
