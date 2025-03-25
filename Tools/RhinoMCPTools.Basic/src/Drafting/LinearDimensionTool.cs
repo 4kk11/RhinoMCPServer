@@ -62,6 +62,12 @@ namespace RhinoMCPTools.Basic
                         "type": "number",
                         "description": "Offset distance for the dimension line from the measurement points",
                         "default": 1.0
+                    },
+                    "scale": {
+                        "type": "number",
+                        "description": "The dimension scale value.",
+                        "minimum": 0,
+                        "default": 1.0
                     }
                 },
                 "required": ["start", "end"]
@@ -97,8 +103,16 @@ namespace RhinoMCPTools.Basic
             var endPoint = new Point3d(endX, endY, endZ);
 
             // オフセット値を取得（デフォルト値: 1.0）
-            var offset = request.Arguments.TryGetValue("offset", out var offsetValue) ? 
+            var offset = request.Arguments.TryGetValue("offset", out var offsetValue) ?
                 Convert.ToDouble(offsetValue.ToString()) : 1.0;
+
+            // スケール値を取得（デフォルト値: 1.0）
+            var scale = request.Arguments.TryGetValue("scale", out var scaleValue) ?
+                Convert.ToDouble(scaleValue.ToString()) : 1.0;
+            if (scale <= 0)
+            {
+                throw new McpServerException("Dimension scale must be greater than 0");
+            }
 
             var rhinoDoc = RhinoDoc.ActiveDoc;
             
@@ -130,6 +144,15 @@ namespace RhinoMCPTools.Basic
 
             // 寸法線をドキュメントに追加
             var guid = rhinoDoc.Objects.AddLinearDimension(dimension);
+
+            // スケールを設定
+            RhinoApp.InvokeOnUiThread(() =>
+            {
+                var obj = rhinoDoc.Objects.Find(guid);
+                ((Dimension)obj.Geometry).DimensionScale = scale;
+                obj.CommitChanges();
+            });
+
             rhinoDoc.Views.Redraw();
 
             var response = new
@@ -142,7 +165,7 @@ namespace RhinoMCPTools.Basic
                     end = new { x = endX, y = endY, z = endZ },
                     offset = offset,
                     length = dimensionLine.Length,
-                    scale = dimension.DimensionScale
+                    scale = scale,
                 }
             };
 
