@@ -108,17 +108,20 @@ namespace RhinoMCPTools.Basic
                     {
                         if (obj.Geometry != null)
                         {
-                            if (obj.Geometry.Transform(transform))
+                            RhinoApp.InvokeOnUiThread(() =>
                             {
-                                obj.CommitChanges();
-                                successCount++;
-                                results.Add(new { guid = guidString, status = "success" });
-                            }
-                            else
-                            {
-                                failureCount++;
-                                results.Add(new { guid = guidString, status = "failure", reason = "Transform operation failed" });
-                            }
+                                if (obj.Geometry.Transform(transform))
+                                {
+                                    obj.CommitChanges();
+                                    successCount++;
+                                    results.Add(new { guid = guidString, status = "success" });
+                                }
+                                else
+                                {
+                                    failureCount++;
+                                    results.Add(new { guid = guidString, status = "failure", reason = "Transform operation failed" });
+                                }
+                            });
                         }
                         else
                         {
