@@ -84,10 +84,28 @@ Currently, Claude Desktop's MCP client does not directly support SSE connections
 
 ## Provided MCP Tools
 
-- **echo**
-  - Function: Echo back input text (for health check)
+### Drafting Tools
+
+- **linear_dimension**
+  - Function: Creates a linear dimension between two points
   - Parameters:
-    - `message` (string, required) - Text to echo back
+    - `start` (object, required) - Start point coordinates
+      - `x` (number, required) - X coordinate
+      - `y` (number, required) - Y coordinate
+      - `z` (number, optional, default: 0) - Z coordinate
+    - `end` (object, required) - End point coordinates
+      - `x` (number, required) - X coordinate
+      - `y` (number, required) - Y coordinate
+      - `z` (number, optional, default: 0) - Z coordinate
+    - `offset` (number, optional, default: 1.0) - Offset distance for dimension line
+
+- **set_dimension_scale**
+  - Function: Sets the dimension scale of dimension objects
+  - Parameters:
+    - `guids` (array of string, required) - Array of GUIDs of the dimension objects to modify
+    - `scale` (number, required) - The new dimension scale value (must be greater than 0)
+
+### Geometry Tools
 
 - **sphere**
   - Function: Create a sphere in Rhino
@@ -96,11 +114,6 @@ Currently, Claude Desktop's MCP client does not directly support SSE connections
     - `x` (number, optional, default: 0) - X coordinate of sphere center
     - `y` (number, optional, default: 0) - Y coordinate of sphere center
     - `z` (number, optional, default: 0) - Z coordinate of sphere center
-
-- **deleteObject**
-  - Function: Delete a Rhino object with specified GUID
-  - Parameters:
-    - `guid` (string, required) - GUID of the object to delete
 
 - **polyline**
   - Function: Create a polyline from specified points
@@ -111,12 +124,52 @@ Currently, Claude Desktop's MCP client does not directly support SSE connections
         - `y` (number, required) - Y coordinate
         - `z` (number, optional, default: 0) - Z coordinate
 
+### Object Tools
+
+- **create_guid_text_dots**
+  - Function: Creates text dots with GUID for objects visible in the current view
+  - Parameters:
+    - `font_height` (number, optional, default: 12.0) - Font height for the text dot
+
+- **delete_object**
+  - Function: Delete a Rhino object with specified GUID
+  - Parameters:
+    - `guid` (string, required) - GUID of the object to delete
+
+- **delete_objects**
+  - Function: Deletes multiple Rhino objects by their GUIDs
+  - Parameters:
+    - `guids` (array of string, required) - Array of GUIDs of the objects to delete
+
+- **set_text_dot_size**
+  - Function: Sets the font height of text dots
+  - Parameters:
+    - `guids` (array of string, required) - Array of GUIDs of the text dots to modify
+    - `font_height` (number, required) - New font height (must be greater than or equal to 1)
+
 - **set_user_text**
   - Function: Set user text attributes for a Rhino object
   - Parameters:
     - `guid` (string, required) - GUID of the target Rhino object
     - `key` (string, required) - Key for the user text attribute
     - `value` (string, required) - Value to set
+
+### View Tools
+
+- **capture_viewport**
+  - Function: Captures the specified Rhino viewport as an image
+  - Parameters:
+    - `viewportName` (string, optional) - The name of the viewport to capture (uses active viewport if not specified)
+    - `width` (number, optional) - The width of the captured image in pixels (uses current viewport width if not specified)
+    - `height` (number, optional) - The height of the captured image in pixels (uses current viewport height if not specified)
+    - `format` (string, optional, enum: ["png", "jpg"], default: "png") - The image format to use
+
+### Miscellaneous Tools
+
+- **echo**
+  - Function: Echo back input text (for health check)
+  - Parameters:
+    - `message` (string, required) - Text to echo back
 
 ## Logs
 

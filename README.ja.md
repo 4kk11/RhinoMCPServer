@@ -84,10 +84,28 @@ https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
 
 ## 提供されるMCPツール
 
-- **echo**
-  - 機能：入力テキストのエコーバック（ヘルスチェック用）
+### 製図関連ツール (Drafting)
+
+- **linear_dimension**
+  - 機能：2点間の寸法線を作成
   - パラメータ：
-    - `message` (string, required) - エコーバックするテキスト
+    - `start` (object, required) - 始点の座標
+      - `x` (number, required) - X座標
+      - `y` (number, required) - Y座標
+      - `z` (number, optional, default: 0) - Z座標
+    - `end` (object, required) - 終点の座標
+      - `x` (number, required) - X座標
+      - `y` (number, required) - Y座標
+      - `z` (number, optional, default: 0) - Z座標
+    - `offset` (number, optional, default: 1.0) - 寸法線のオフセット距離
+
+- **set_dimension_scale**
+  - 機能：寸法オブジェクトのスケールを設定
+  - パラメータ：
+    - `guids` (array of string, required) - 対象の寸法オブジェクトのGUID配列
+    - `scale` (number, required) - 新しい寸法スケール値（0より大きい値）
+
+### ジオメトリ操作 (Geometry)
 
 - **sphere**
   - 機能：Rhino内での球体作成
@@ -97,10 +115,6 @@ https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
     - `y` (number, optional, default: 0) - 球体の中心のY座標
     - `z` (number, optional, default: 0) - 球体の中心のZ座標
 
-- **deleteObject**
-  - 機能：指定されたGUIDのRhinoオブジェクトを削除
-  - パラメータ：
-    - `guid` (string, required) - 削除するオブジェクトのGUID
 - **polyline**
   - 機能：指定された点列から折れ線を作成
   - パラメータ：
@@ -110,6 +124,29 @@ https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
         - `y` (number, required) - Y座標
         - `z` (number, optional, default: 0) - Z座標
 
+### オブジェクト操作 (Object)
+
+- **create_guid_text_dots**
+  - 機能：現在のビューで表示されているオブジェクトのGUIDをテキストドットとして表示
+  - パラメータ：
+    - `font_height` (number, optional, default: 12.0) - テキストドットのフォントサイズ
+
+- **delete_object**
+  - 機能：指定されたGUIDのRhinoオブジェクトを削除
+  - パラメータ：
+    - `guid` (string, required) - 削除するオブジェクトのGUID
+
+- **delete_objects**
+  - 機能：複数のRhinoオブジェクトを一括で削除
+  - パラメータ：
+    - `guids` (array of string, required) - 削除するオブジェクトのGUID配列
+
+- **set_text_dot_size**
+  - 機能：テキストドットのフォントサイズを設定
+  - パラメータ：
+    - `guids` (array of string, required) - 対象のテキストドットのGUID配列
+    - `font_height` (number, required) - 新しいフォントサイズ（1以上）
+
 - **set_user_text**
   - 機能：Rhinoオブジェクトにユーザーテキスト属性を設定
   - パラメータ：
@@ -117,6 +154,22 @@ https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
     - `key` (string, required) - ユーザーテキスト属性のキー
     - `value` (string, required) - 設定する値
 
+### ビュー操作 (View)
+
+- **capture_viewport**
+  - 機能：指定されたRhinoビューポートを画像としてキャプチャ
+  - パラメータ：
+    - `viewportName` (string, optional) - キャプチャするビューポートの名前（未指定の場合はアクティブビューポート）
+    - `width` (number, optional) - キャプチャ画像の幅（ピクセル単位、未指定の場合は現在のビューポート幅）
+    - `height` (number, optional) - キャプチャ画像の高さ（ピクセル単位、未指定の場合は現在のビューポート高さ）
+    - `format` (string, optional, enum: ["png", "jpg"], default: "png") - 出力画像フォーマット
+
+### その他 (Misc)
+
+- **echo**
+  - 機能：入力テキストのエコーバック（ヘルスチェック用）
+  - パラメータ：
+    - `message` (string, required) - エコーバックするテキスト
 
 ## ログ
 
