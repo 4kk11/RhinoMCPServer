@@ -108,7 +108,7 @@ Basic geometry operation and drafting tools.
     - `guids` (array of string, required) - Array of GUIDs of the dimension objects to modify
     - `scale` (number, required) - The new dimension scale value (must be greater than 0)
 
-### Geometry Tools (Geometry)
+#### Geometry Tools (Geometry)
 
 - **sphere**
   - Function: Create a sphere in Rhino
@@ -127,7 +127,7 @@ Basic geometry operation and drafting tools.
         - `y` (number, required) - Y coordinate
         - `z` (number, optional, default: 0) - Z coordinate
 
-### Object Tools (Object)
+#### Object Tools (Object)
 
 - **create_guid_text_dots**
   - Function: Creates text dots with GUID for objects visible in the current view
@@ -157,7 +157,7 @@ Basic geometry operation and drafting tools.
     - `key` (string, required) - Key for the user text attribute
     - `value` (string, required) - Value to set
 
-### View Tools (View)
+#### View Tools (View)
 
 - **capture_viewport**
   - Function: Captures the specified Rhino viewport as an image

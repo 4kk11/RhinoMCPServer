@@ -108,7 +108,7 @@ https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
     - `guids` (array of string, required) - 対象の寸法オブジェクトのGUID配列
     - `scale` (number, required) - 新しい寸法スケール値（0より大きい値）
 
-### ジオメトリ操作 (Geometry)
+#### ジオメトリ操作 (Geometry)
 
 - **sphere**
   - 機能：Rhino内での球体作成
@@ -127,7 +127,7 @@ https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
         - `y` (number, required) - Y座標
         - `z` (number, optional, default: 0) - Z座標
 
-### オブジェクト操作 (Object)
+#### オブジェクト操作 (Object)
 
 - **create_guid_text_dots**
   - 機能：現在のビューで表示されているオブジェクトのGUIDをテキストドットとして表示
@@ -157,7 +157,7 @@ https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
     - `key` (string, required) - ユーザーテキスト属性のキー
     - `value` (string, required) - 設定する値
 
-### ビュー操作 (View)
+#### ビュー操作 (View)
 
 - **capture_viewport**
   - 機能：指定されたRhinoビューポートを画像としてキャプチャ
