@@ -92,7 +92,8 @@ namespace RhinoMCPTools.Basic
                         y = dot.location.Y,
                         z = dot.location.Z
                     }
-                }).ToArray()
+                }).ToArray(),
+                description = "This guid is the guid of the text dot. The text of the text dot is the guid of the geometry.",
             };
 
             return Task.FromResult(new CallToolResponse()
