@@ -138,11 +138,6 @@ https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
 
 #### オブジェクト操作 (Object)
 
-- **create_guid_text_dots**
-  - 機能：現在のビューで表示されているオブジェクトのGUIDをテキストドットとして表示
-  - パラメータ：
-    - `font_height` (number, optional, default: 12.0) - テキストドットのフォントサイズ
-
 - **delete_object**
   - 機能：指定されたGUIDのRhinoオブジェクトを削除
   - パラメータ：
@@ -175,6 +170,8 @@ https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
     - `width` (number, optional) - キャプチャ画像の幅（ピクセル単位、未指定の場合は現在のビューポート幅）
     - `height` (number, optional) - キャプチャ画像の高さ（ピクセル単位、未指定の場合は現在のビューポート高さ）
     - `format` (string, optional, enum: ["png", "jpg"], default: "png") - 出力画像フォーマット
+    - `show_guid_text_dots` (boolean, optional, default: false) - オブジェクトのGUIDを表示するテキストドットを一時的に表示するかどうか
+    - `font_height` (number, optional, default: 12.0) - GUIDテキストドットのフォントサイズ
 
 ### RhinoMCPTools.Misc
 ユーティリティ機能を提供するツール群です。

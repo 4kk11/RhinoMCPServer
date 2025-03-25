@@ -138,11 +138,6 @@ Basic geometry operation and drafting tools.
 
 #### Object Tools (Object)
 
-- **create_guid_text_dots**
-  - Function: Creates text dots with GUID for objects visible in the current view
-  - Parameters:
-    - `font_height` (number, optional, default: 12.0) - Font height for the text dot
-
 - **delete_object**
   - Function: Delete a Rhino object with specified GUID
   - Parameters:
