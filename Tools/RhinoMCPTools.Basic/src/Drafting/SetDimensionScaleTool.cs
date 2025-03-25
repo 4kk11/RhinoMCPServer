@@ -19,9 +19,12 @@ namespace RhinoMCPTools.Basic
             {
                 "type": "object",
                 "properties": {
-                    "guid": {
-                        "type": "string",
-                        "description": "The GUID of the target dimension object."
+                    "guids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Array of GUIDs of the dimension objects to modify."
                     },
                     "scale": {
                         "type": "number",
@@ -29,7 +32,7 @@ namespace RhinoMCPTools.Basic
                         "minimum": 0
                     }
                 },
-                "required": ["guid", "scale"]
+                "required": ["guids", "scale"]
             }
             """);
 
@@ -40,28 +43,17 @@ namespace RhinoMCPTools.Basic
                 throw new McpServerException("Missing required arguments");
             }
 
-            if (!request.Arguments.TryGetValue("guid", out var guidValue) ||
+            if (request.Arguments is null ||
+                !request.Arguments.TryGetValue("guids", out var guidsValue) ||
                 !request.Arguments.TryGetValue("scale", out var scaleValue))
             {
-                throw new McpServerException("Missing required arguments: 'guid' and 'scale' are required");
+                throw new McpServerException("Missing required arguments: 'guids' and 'scale' are required");
             }
 
-            var rhinoDoc = RhinoDoc.ActiveDoc;
-            if (!Guid.TryParse(guidValue.ToString(), out Guid objectGuid))
+            var jsonElement = (JsonElement)guidsValue;
+            if (jsonElement.ValueKind != JsonValueKind.Array)
             {
-                throw new McpServerException("Invalid GUID format");
-            }
-
-            var rhinoObject = rhinoDoc.Objects.Find(objectGuid);
-            if (rhinoObject == null)
-            {
-                throw new McpServerException($"No object found with GUID: {objectGuid}");
-            }
-
-            var dimension = rhinoObject.Geometry as Dimension;
-            if (dimension == null)
-            {
-                throw new McpServerException("The specified object is not a dimension object");
+                throw new McpServerException("The 'guids' argument must be an array");
             }
 
             var newScale = Convert.ToDouble(scaleValue.ToString());
@@ -70,22 +62,64 @@ namespace RhinoMCPTools.Basic
                 throw new McpServerException("Dimension scale must be greater than 0");
             }
 
-            // メインスレッドで寸法のスケールを設定
+            var guidStrings = jsonElement.EnumerateArray()
+                .Select(x => x.GetString())
+                .Where(x => x != null)
+                .ToList();
+
+            if (!guidStrings.Any())
+            {
+                throw new McpServerException("The guids array cannot be empty");
+            }
+
+            var rhinoDoc = RhinoDoc.ActiveDoc;
+            var results = new List<object>();
+            var successCount = 0;
+            var failureCount = 0;
+
+            foreach (var guidString in guidStrings)
+            {
+                if (Guid.TryParse(guidString, out var guid))
+                {
+                    var obj = rhinoDoc.Objects.Find(guid);
+                    if (obj != null && obj.Geometry is Dimension dimension)
+                    {
+                        RhinoApp.InvokeOnUiThread(() =>
+                        {
+                            dimension.DimensionScale = newScale;
+                            obj.CommitChanges();
+                        });
+                        successCount++;
+                        results.Add(new { guid = guidString, status = "success" });
+                    }
+                    else
+                    {
+                        failureCount++;
+                        results.Add(new { guid = guidString, status = "failure", reason = "Object not found or not a dimension object" });
+                    }
+                }
+                else
+                {
+                    failureCount++;
+                    results.Add(new { guid = guidString, status = "failure", reason = "Invalid GUID format" });
+                }
+            }
+
             RhinoApp.InvokeOnUiThread(() =>
             {
-                dimension.DimensionScale = newScale;
-                rhinoObject.CommitChanges();
                 rhinoDoc.Views.Redraw();
             });
 
             var response = new
             {
-                status = "success",
-                dimension = new
+                summary = new
                 {
-                    guid = objectGuid.ToString(),
-                    new_dimension_scale = newScale
-                }
+                    totalObjects = guidStrings.Count,
+                    successfulUpdates = successCount,
+                    failedUpdates = failureCount,
+                    newDimensionScale = newScale
+                },
+                results = results
             };
 
             return Task.FromResult(new CallToolResponse()
