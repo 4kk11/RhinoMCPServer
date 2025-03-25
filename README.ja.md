@@ -84,7 +84,10 @@ https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
 
 ## 提供されるMCPツール
 
-### 製図関連ツール (Drafting)
+### RhinoMCPTools.Basic
+基本的なジオメトリ操作や製図機能を提供するツール群です。
+
+#### 製図関連ツール (Drafting)
 
 - **linear_dimension**
   - 機能：2点間の寸法線を作成
@@ -164,7 +167,8 @@ https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
     - `height` (number, optional) - キャプチャ画像の高さ（ピクセル単位、未指定の場合は現在のビューポート高さ）
     - `format` (string, optional, enum: ["png", "jpg"], default: "png") - 出力画像フォーマット
 
-### その他 (Misc)
+### RhinoMCPTools.Misc
+ユーティリティ機能を提供するツール群です。
 
 - **echo**
   - 機能：入力テキストのエコーバック（ヘルスチェック用）

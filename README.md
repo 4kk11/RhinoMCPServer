@@ -84,7 +84,10 @@ Currently, Claude Desktop's MCP client does not directly support SSE connections
 
 ## Provided MCP Tools
 
-### Drafting Tools
+### RhinoMCPTools.Basic
+Basic geometry operation and drafting tools.
+
+#### Drafting Tools (Drafting)
 
 - **linear_dimension**
   - Function: Creates a linear dimension between two points
@@ -105,7 +108,7 @@ Currently, Claude Desktop's MCP client does not directly support SSE connections
     - `guids` (array of string, required) - Array of GUIDs of the dimension objects to modify
     - `scale` (number, required) - The new dimension scale value (must be greater than 0)
 
-### Geometry Tools
+### Geometry Tools (Geometry)
 
 - **sphere**
   - Function: Create a sphere in Rhino
@@ -124,7 +127,7 @@ Currently, Claude Desktop's MCP client does not directly support SSE connections
         - `y` (number, required) - Y coordinate
         - `z` (number, optional, default: 0) - Z coordinate
 
-### Object Tools
+### Object Tools (Object)
 
 - **create_guid_text_dots**
   - Function: Creates text dots with GUID for objects visible in the current view
@@ -154,7 +157,7 @@ Currently, Claude Desktop's MCP client does not directly support SSE connections
     - `key` (string, required) - Key for the user text attribute
     - `value` (string, required) - Value to set
 
-### View Tools
+### View Tools (View)
 
 - **capture_viewport**
   - Function: Captures the specified Rhino viewport as an image
@@ -164,7 +167,8 @@ Currently, Claude Desktop's MCP client does not directly support SSE connections
     - `height` (number, optional) - The height of the captured image in pixels (uses current viewport height if not specified)
     - `format` (string, optional, enum: ["png", "jpg"], default: "png") - The image format to use
 
-### Miscellaneous Tools
+### RhinoMCPTools.Misc
+Utility tools.
 
 - **echo**
   - Function: Echo back input text (for health check)
