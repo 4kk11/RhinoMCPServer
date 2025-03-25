@@ -16,6 +16,8 @@ namespace RhinoMCPTools.Basic
 {
     public class CaptureViewportTool : IMCPTool
     {
+        private static readonly string[] Symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".Select(c => c.ToString()).ToArray();
+
         public string Name => "capture_viewport";
         public string Description => """
             Captures the specified Rhino viewport as an image for various purposes:
@@ -24,7 +26,9 @@ namespace RhinoMCPTools.Basic
             • Debugging: Helps verify object positions and relationships
             
             Features:
-            • Optional GUID visualization: Temporarily displays object GUIDs during capture
+            • Simple symbol labeling (A, B, C...) for objects
+            • Automatic mapping between symbols and object IDs
+            • Clear and intuitive text annotations
             """;
 
         public JsonElement InputSchema => JsonSerializer.Deserialize<JsonElement>("""
@@ -49,14 +53,14 @@ namespace RhinoMCPTools.Basic
                         "description": "The image format to use for the capture.",
                         "default": "png"
                     },
-                    "show_guid_text_dots": {
+                    "show_object_labels": {
                         "type": "boolean",
-                        "description": "Whether to temporarily display text dots showing object GUIDs in the viewport.",
+                        "description": "Whether to display simple symbol labels (A, B, C...) for objects in the viewport.",
                         "default": false
                     },
                     "font_height": {
                         "type": "number",
-                        "description": "Font size for the GUID text dots (if enabled).",
+                        "description": "Font size for the label text.",
                         "default": 20.0
                     }
                 }
@@ -75,7 +79,7 @@ namespace RhinoMCPTools.Basic
                 int? width = null;
                 int? height = null;
                 string format = "png";
-                bool showGuidTextDots = false;
+                bool showObjectLabels = false;
                 double fontHeight = 20.0;
 
                 if (request.Arguments != null)
@@ -96,9 +100,9 @@ namespace RhinoMCPTools.Basic
                     {
                         format = formatValue.ToString()?.ToLower() ?? "png";
                     }
-                    if (request.Arguments.TryGetValue("show_guid_text_dots", out var showDotsValue) && showDotsValue is JsonElement showDotsElement)
+                    if (request.Arguments.TryGetValue("show_object_labels", out var showLabelsValue) && showLabelsValue is JsonElement showLabelsElement)
                     {
-                        showGuidTextDots = showDotsElement.GetBoolean();
+                        showObjectLabels = showLabelsElement.GetBoolean();
                     }
                     if (request.Arguments.TryGetValue("font_height", out var fontHeightValue) && fontHeightValue is JsonElement fontHeightElement)
                     {
@@ -116,41 +120,40 @@ namespace RhinoMCPTools.Basic
                     throw new McpServerException($"Viewport not found: {viewportName ?? "active"}");
                 }
 
-                // TextDotManagerの初期化（GUIDテキストドットが有効な場合）
-                using var textDotManager = showGuidTextDots ? new TextDotManager(rhinoDoc) : null;
+                // オブジェクトマッピングの初期化
+                var objectMapping = new Dictionary<string, string>(); // Symbol -> GUID
+                using var textDotManager = showObjectLabels ? new TextDotManager(rhinoDoc) : null;
 
-                if (showGuidTextDots)
+                if (showObjectLabels)
                 {
-                    // SelVisibleコマンドを実行して表示オブジェクトを選択
-                    
                     RhinoApp.InvokeOnUiThread(() =>
                     {
+                        // 表示されているオブジェクトを取得
                         var selectedObjectIds = new List<Guid>();
                         var command = "SelVisible " + " _Enter";
                         RhinoApp.RunScript(command, true);
-                        var selectedObjects = rhinoDoc.Objects.GetSelectedObjects(false, false);
+                        var selectedObjects = rhinoDoc.Objects.GetSelectedObjects(false, false).ToList();
                         selectedObjectIds.AddRange(selectedObjects.Select(obj => obj.Id));
                         rhinoDoc.Objects.UnselectAll();
 
-                        // 選択されたオブジェクトにテキストドットを配置
+                        // オブジェクトラベルの設定
                         var attributes = new ObjectAttributes();
                         attributes.ObjectColor = System.Drawing.Color.White;
-                        
-                        foreach (var id in selectedObjectIds)
+
+                        for (int i = 0; i < selectedObjectIds.Count && i < Symbols.Length; i++)
                         {
-                            var obj = rhinoDoc.Objects.Find(id);
+                            var obj = rhinoDoc.Objects.Find(selectedObjectIds[i]);
                             if (obj != null)
                             {
+                                var symbol = Symbols[i];
                                 var bbox = obj.Geometry.GetBoundingBox(true);
                                 var dotLocation = bbox.Center;
-                                textDotManager?.AddTextDot(dotLocation, id.ToString(), (int)fontHeight, attributes);
+                                
+                                textDotManager?.AddTextDot(dotLocation, symbol, (int)fontHeight, attributes);
+                                objectMapping[symbol] = selectedObjectIds[i].ToString();
                             }
                         }
                     });
-
-
-
-
                 }
 
                 // キャプチャサイズの設定
@@ -166,12 +169,12 @@ namespace RhinoMCPTools.Basic
                     throw new McpServerException("Failed to capture viewport");
                 }
 
-                // bitmapをMemoryStreamに保存 (PNGフォーマット)
+                // bitmapをMemoryStreamに保存
                 using var intermediateStream = new MemoryStream();
                 bitmap.Save(intermediateStream, ImageFormat.Png);
                 intermediateStream.Seek(0, SeekOrigin.Begin);
 
-                // ImageSharp.Imageとして読み込む
+                // ImageSharpを使用して画像を処理
                 using var image = await SixLabors.ImageSharp.Image.LoadAsync(intermediateStream);
                 using var outputStream = new MemoryStream();
 
@@ -187,14 +190,35 @@ namespace RhinoMCPTools.Basic
 
                 var base64Image = Convert.ToBase64String(outputStream.ToArray());
 
+                // レスポンスの作成
+                var response = new
+                {
+                    status = "success",
+                    objects = objectMapping.Select(kvp => new { symbol = kvp.Key, guid = kvp.Value }).ToArray(),
+                    image_info = new
+                    {
+                        format,
+                        width = size.Width,
+                        height = size.Height
+                    }
+                };
+
                 return new CallToolResponse()
                 {
-                    Content = [new Content()
-                    {
-                        Type = "image",
-                        Data = base64Image,
-                        MimeType = format == "jpg" ? "image/jpeg" : "image/png"
-                    }]
+                    Content = 
+                    [
+                        new Content()
+                        {
+                            Type = "text",
+                            Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true })
+                        },
+                        new Content()
+                        {
+                            Type = "image",
+                            Data = base64Image,
+                            MimeType = format == "jpg" ? "image/jpeg" : "image/png"
+                        }
+                    ]
                 };
             }
             catch (Exception ex)
