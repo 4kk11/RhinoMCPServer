@@ -127,6 +127,15 @@ Basic geometry operation and drafting tools.
         - `y` (number, required) - Y coordinate
         - `z` (number, optional, default: 0) - Z coordinate
 
+- **move_objects**
+  - Function: Move specified Rhino objects along a vector
+  - Parameters:
+    - `guids` (array of string, required) - Array of GUIDs of the objects to move
+    - `vector` (object, required) - Movement vector
+      - `x` (number, required) - X component of movement distance
+      - `y` (number, required) - Y component of movement distance
+      - `z` (number, optional, default: 0) - Z component of movement distance
+
 #### Object Tools (Object)
 
 - **create_guid_text_dots**

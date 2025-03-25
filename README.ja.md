@@ -127,6 +127,15 @@ https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
         - `y` (number, required) - Y座標
         - `z` (number, optional, default: 0) - Z座標
 
+- **move_objects**
+  - 機能：指定されたRhinoオブジェクトをベクトルに沿って移動
+  - パラメータ：
+    - `guids` (array of string, required) - 移動するオブジェクトのGUID配列
+    - `vector` (object, required) - 移動ベクトル
+      - `x` (number, required) - X方向の移動距離
+      - `y` (number, required) - Y方向の移動距離
+      - `z` (number, optional, default: 0) - Z方向の移動距離
+
 #### オブジェクト操作 (Object)
 
 - **create_guid_text_dots**
