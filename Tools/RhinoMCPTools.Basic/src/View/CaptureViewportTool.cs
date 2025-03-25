@@ -11,8 +11,15 @@ namespace RhinoMCPTools.Basic
 {
     public class CaptureViewportTool : IMCPTool
     {
-        public string Name => "captureViewport";
-        public string Description => "Captures the specified Rhino viewport as an image.";
+        public string Name => "capture_viewport";
+        public string Description => """
+            Captures the specified Rhino viewport as an image for various purposes:
+            • Documentation: Records the current state of 3D workspace
+            • Communication: Facilitates design reviews and progress sharing
+            • Debugging: Helps verify object positions and relationships
+            
+            Note: For capturing scenes with object GUIDs, use 'create_guid_text_dots' tool first to visualize the GUIDs in the viewport.
+            """;
 
         public JsonElement InputSchema => JsonSerializer.Deserialize<JsonElement>("""
             {

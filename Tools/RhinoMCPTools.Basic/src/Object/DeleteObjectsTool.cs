@@ -12,7 +12,7 @@ namespace RhinoMCPTools.Basic
 {
     public class DeleteObjectsTool : IMCPTool
     {
-        public string Name => "deleteObjects";
+        public string Name => "delete_objects";
         public string Description => "Deletes multiple Rhino objects by their GUIDs.";
 
         public JsonElement InputSchema => JsonSerializer.Deserialize<JsonElement>("""
