@@ -11,12 +11,13 @@ using Rhino.Geometry;
 using Rhino.DocObjects;
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace RhinoMCPTools.Basic
 {
     public class CaptureViewportTool : IMCPTool
     {
-        private static readonly string[] Symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".Select(c => c.ToString()).ToArray();
+        private const string BaseCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
         public string Name => "capture_viewport";
         public string Description => """
@@ -26,7 +27,7 @@ namespace RhinoMCPTools.Basic
             • Debugging: Helps verify object positions and relationships
             
             Features:
-            • Simple symbol labeling (A, B, C...) for objects
+            • Expandable symbol labeling (A-Z, AA-ZZ, AAA-ZZZ...)
             • Automatic mapping between symbols and object IDs
             • Clear and intuitive text annotations
             """;
@@ -55,8 +56,8 @@ namespace RhinoMCPTools.Basic
                     },
                     "show_object_labels": {
                         "type": "boolean",
-                        "description": "Whether to display simple symbol labels (A, B, C...) for objects in the viewport.",
-                        "default": false
+                        "description": "Whether to display simple symbol labels (A, B, C..., AA, AB...) for objects in the viewport.",
+                        "default": true
                     },
                     "font_height": {
                         "type": "number",
@@ -66,6 +67,27 @@ namespace RhinoMCPTools.Basic
                 }
             }
             """);
+
+        /// <summary>
+        /// 数値からアルファベット記号を生成します。
+        /// 例：0 -> "A", 25 -> "Z", 26 -> "AA", 27 -> "AB", 51 -> "AZ", 52 -> "BA" など
+        /// </summary>
+        private string GenerateSymbol(int number)
+        {
+            if (number < 0) throw new ArgumentException("Number must be non-negative", nameof(number));
+
+            var result = new StringBuilder();
+            number++; // 1ベースの計算にするため
+
+            while (number > 0)
+            {
+                number--; // 0ベースのインデックスに変換
+                result.Insert(0, BaseCharacters[number % BaseCharacters.Length]);
+                number /= BaseCharacters.Length;
+            }
+
+            return result.ToString();
+        }
 
         public async Task<CallToolResponse> ExecuteAsync(CallToolRequestParams request, IMcpServer? server)
         {
@@ -79,7 +101,7 @@ namespace RhinoMCPTools.Basic
                 int? width = null;
                 int? height = null;
                 string format = "png";
-                bool showObjectLabels = false;
+                bool showObjectLabels = true;
                 double fontHeight = 20.0;
 
                 if (request.Arguments != null)
@@ -140,12 +162,12 @@ namespace RhinoMCPTools.Basic
                         var attributes = new ObjectAttributes();
                         attributes.ObjectColor = System.Drawing.Color.White;
 
-                        for (int i = 0; i < selectedObjectIds.Count && i < Symbols.Length; i++)
+                        for (int i = 0; i < selectedObjectIds.Count; i++)
                         {
                             var obj = rhinoDoc.Objects.Find(selectedObjectIds[i]);
                             if (obj != null)
                             {
-                                var symbol = Symbols[i];
+                                var symbol = GenerateSymbol(i);
                                 var bbox = obj.Geometry.GetBoundingBox(true);
                                 var dotLocation = bbox.Center;
                                 
