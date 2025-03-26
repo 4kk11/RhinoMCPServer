@@ -167,6 +167,12 @@ Basic geometry operation and drafting tools.
     - `guid` (string, required) - GUID of the target Rhino object
     - `layer_name` (string, required) - Name of the target layer
 
+- **change_object_layer_by_index**
+  - Function: Change an object's layer by specifying the layer index
+  - Parameters:
+    - `guid` (string, required) - GUID of the target Rhino object
+    - `layer_index` (number, required) - Index of the target layer
+
 #### Object Tools (Object)
 
 - **delete_object**

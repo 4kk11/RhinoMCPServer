@@ -167,6 +167,12 @@ https://github.com/user-attachments/assets/932d62ed-335f-4238-806a-faafcfacf0b6
     - `guid` (string, required) - 対象のRhinoオブジェクトのGUID
     - `layer_name` (string, required) - 移動先のレイヤー名
 
+- **change_object_layer_by_index**
+  - 機能：レイヤーインデックスを指定してオブジェクトのレイヤーを変更
+  - パラメータ：
+    - `guid` (string, required) - 対象のRhinoオブジェクトのGUID
+    - `layer_index` (number, required) - 移動先のレイヤーインデックス
+
 #### オブジェクト操作 (Object)
 
 - **delete_object**
