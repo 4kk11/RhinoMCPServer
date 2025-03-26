@@ -172,6 +172,17 @@ https://github.com/user-attachments/assets/932d62ed-335f-4238-806a-faafcfacf0b6
     - `guid` (string, required) - 対象のRhinoオブジェクトのGUID
     - `layer_index` (number, required) - 移動先のレイヤーインデックス
 
+- **list_layers**
+  - 機能：ドキュメント内の全レイヤー情報を取得
+  - パラメータ：なし
+  - 戻り値：レイヤー情報の配列
+    - `full_path` (string) - レイヤーのフルパス
+    - `index` (number) - レイヤーインデックス
+    - `id` (string) - レイヤーのID
+    - `color` (string) - レイヤーの色（16進数形式）
+    - `visible` (boolean) - レイヤーの表示/非表示状態
+    - `locked` (boolean) - レイヤーのロック状態
+
 #### オブジェクト操作 (Object)
 
 - **delete_object**

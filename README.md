@@ -172,6 +172,17 @@ Basic geometry operation and drafting tools.
     - `guid` (string, required) - GUID of the target Rhino object
     - `layer_index` (number, required) - Index of the target layer
 
+- **list_layers**
+  - Function: Retrieve information about all layers in the document
+  - Parameters: None
+  - Return value: Array of layer information
+    - `full_path` (string) - Full path of the layer
+    - `index` (number) - Layer index
+    - `id` (string) - Layer ID
+    - `color` (string) - Layer color in hex format
+    - `visible` (boolean) - Layer visibility state
+    - `locked` (boolean) - Layer locked state
+
 #### Object Tools (Object)
 
 - **delete_object**
