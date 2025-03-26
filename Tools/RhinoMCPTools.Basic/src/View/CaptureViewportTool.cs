@@ -12,6 +12,7 @@ using Rhino.DocObjects;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using RhinoMCPTools.Basic.Helpers;
 
 namespace RhinoMCPTools.Basic
 {

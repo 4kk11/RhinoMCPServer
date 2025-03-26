@@ -4,7 +4,7 @@ using Rhino;
 using Rhino.DocObjects;
 using Rhino.Geometry;
 
-namespace RhinoMCPTools.Basic
+namespace RhinoMCPTools.Basic.Helpers
 {
     // TextDotを管理し、Dispose時に自動的に削除するためのクラス
     class TextDotManager : IDisposable
