@@ -208,6 +208,19 @@ Basic geometry operation and drafting tools.
     - `key` (string, required) - Key for the user text attribute
     - `value` (string, required) - Value to set
 
+- **set_object_name**
+  - Function: Set the name of a Rhino object
+  - Parameters:
+    - `guid` (string, required) - GUID of the target Rhino object
+    - `name` (string, required) - Name to set for the object
+
+- **get_object_name**
+  - Function: Get the name of a Rhino object
+  - Parameters:
+    - `guid` (string, required) - GUID of the target Rhino object
+  - Return value:
+    - `name` (string) - Object's name (empty string if not set)
+
 #### View Tools (View)
 
 - **capture_viewport**

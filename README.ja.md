@@ -208,6 +208,19 @@ https://github.com/user-attachments/assets/932d62ed-335f-4238-806a-faafcfacf0b6
     - `key` (string, required) - ユーザーテキスト属性のキー
     - `value` (string, required) - 設定する値
 
+- **set_object_name**
+  - 機能：Rhinoオブジェクトの名前を設定
+  - パラメータ：
+    - `guid` (string, required) - 対象のRhinoオブジェクトのGUID
+    - `name` (string, required) - 設定する名前
+
+- **get_object_name**
+  - 機能：Rhinoオブジェクトの名前を取得
+  - パラメータ：
+    - `guid` (string, required) - 対象のRhinoオブジェクトのGUID
+  - 戻り値：
+    - `name` (string) - オブジェクトの名前（設定されていない場合は空文字列）
+
 #### ビュー操作 (View)
 
 - **capture_viewport**
