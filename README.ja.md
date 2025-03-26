@@ -152,6 +152,21 @@ https://github.com/user-attachments/assets/932d62ed-335f-4238-806a-faafcfacf0b6
 
 #### オブジェクト操作 (Object)
 
+- **create_layer**
+  - 機能：新しいレイヤーを作成
+  - パラメータ：
+    - `name` (string, required) - 作成するレイヤーの名前
+    - `color` (string, optional) - レイヤーの色（16進数形式、例：'#FF0000'）
+    - `visible` (boolean, optional, default: true) - レイヤーの表示/非表示
+    - `locked` (boolean, optional, default: false) - レイヤーのロック状態
+    - `parent_name` (string, optional) - 親レイヤーの名前
+
+- **change_object_layer_by_name**
+  - 機能：レイヤー名を指定してオブジェクトのレイヤーを変更
+  - パラメータ：
+    - `guid` (string, required) - 対象のRhinoオブジェクトのGUID
+    - `layer_name` (string, required) - 移動先のレイヤー名
+
 - **delete_object**
   - 機能：指定されたGUIDのRhinoオブジェクトを削除
   - パラメータ：
