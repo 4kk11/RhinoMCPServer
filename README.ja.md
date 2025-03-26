@@ -221,6 +221,31 @@ https://github.com/user-attachments/assets/932d62ed-335f-4238-806a-faafcfacf0b6
   - 戻り値：
     - `name` (string) - オブジェクトの名前（設定されていない場合は空文字列）
 
+- **get_object_attributes**
+  - 機能：Rhinoオブジェクトの属性情報を取得
+  - パラメータ：
+    - `guid` (string, required) - 対象のRhinoオブジェクトのGUID
+  - 戻り値：オブジェクトの属性情報
+    - `name` (string) - オブジェクトの名前
+    - `layer_index` (number) - レイヤーのインデックス
+    - `layer_name` (string) - レイヤーの名前
+    - `object_color` (object) - オブジェクトの色
+      - `r` (number) - 赤成分 (0-255)
+      - `g` (number) - 緑成分 (0-255)
+      - `b` (number) - 青成分 (0-255)
+      - `a` (number) - アルファ値 (0-255)
+    - `color_source` (string) - 色の設定元
+    - `plot_color` (object) - プロット時の色
+      - `r` (number) - 赤成分 (0-255)
+      - `g` (number) - 緑成分 (0-255)
+      - `b` (number) - 青成分 (0-255)
+      - `a` (number) - アルファ値 (0-255)
+    - `plot_weight` (number) - プロット時の線の太さ
+    - `visible` (boolean) - 可視性
+    - `mode` (string) - オブジェクトのモード (Normal/Locked/Hidden等)
+    - `object_type` (string) - オブジェクトの種類
+    - `user_text` (object) - ユーザーテキスト属性（キーと値のペア）
+
 #### ビュー操作 (View)
 
 - **capture_viewport**

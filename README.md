@@ -221,6 +221,31 @@ Basic geometry operation and drafting tools.
   - Return value:
     - `name` (string) - Object's name (empty string if not set)
 
+- **get_object_attributes**
+  - Function: Get the attributes of a Rhino object
+  - Parameters:
+    - `guid` (string, required) - GUID of the target Rhino object
+  - Return value: Object's attribute information
+    - `name` (string) - Object's name
+    - `layer_index` (number) - Layer index
+    - `layer_name` (string) - Layer name
+    - `object_color` (object) - Object's color
+      - `r` (number) - Red component (0-255)
+      - `g` (number) - Green component (0-255)
+      - `b` (number) - Blue component (0-255)
+      - `a` (number) - Alpha value (0-255)
+    - `color_source` (string) - Color source
+    - `plot_color` (object) - Plot color
+      - `r` (number) - Red component (0-255)
+      - `g` (number) - Green component (0-255)
+      - `b` (number) - Blue component (0-255)
+      - `a` (number) - Alpha value (0-255)
+    - `plot_weight` (number) - Plot line weight
+    - `visible` (boolean) - Visibility state
+    - `mode` (string) - Object mode (Normal/Locked/Hidden etc.)
+    - `object_type` (string) - Object type
+    - `user_text` (object) - User text attributes (key-value pairs)
+
 #### View Tools (View)
 
 - **capture_viewport**
