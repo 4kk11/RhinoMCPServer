@@ -159,6 +159,37 @@ Basic geometry operation and drafting tools.
       - `y` (number, required) - Y component of movement distance
       - `z` (number, optional, default: 0) - Z component of movement distance
 
+- **get_geometry_info**
+  - Function: Get geometric information of a Rhino object
+  - Parameters:
+    - `guid` (string, required) - GUID of the target Rhino object
+  - Return value: Detailed information based on object type
+    - For Polyline:
+      - `points` (array) - Array of vertex coordinates
+      - `length` (number) - Total length of the polyline
+      - `is_closed` (boolean) - Whether the polyline is closed
+      - `segment_count` (number) - Number of segments
+      - `point_count` (number) - Number of vertices
+    - For Circle:
+      - `center` (object) - Center point coordinates
+      - `radius` (number) - Radius
+      - `circumference` (number) - Circumference
+      - `diameter` (number) - Diameter
+      - `plane` (object) - Circle's plane information
+    - For Surface:
+      - `is_periodic` (boolean) - Whether the surface is periodic
+      - `is_singular` (boolean) - Whether the surface has singularities
+      - `domain` (object) - Parameter domain
+      - `bounding_box` (object) - Bounding box
+    - For Brep:
+      - `face_count` (number) - Number of faces
+      - `edge_count` (number) - Number of edges
+      - `vertex_count` (number) - Number of vertices
+      - `is_solid` (boolean) - Whether it's a solid
+      - `is_manifold` (boolean) - Whether it's manifold
+      - `area` (number) - Surface area
+      - `volume` (number) - Volume (only for solids)
+
 #### Layer Tools (Layer)
 
 - **create_layer**

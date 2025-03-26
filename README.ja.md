@@ -159,6 +159,37 @@ https://github.com/user-attachments/assets/932d62ed-335f-4238-806a-faafcfacf0b6
       - `y` (number, required) - Y方向の移動距離
       - `z` (number, optional, default: 0) - Z方向の移動距離
 
+- **get_geometry_info**
+  - 機能：Rhinoオブジェクトのジオメトリ情報を取得
+  - パラメータ：
+    - `guid` (string, required) - 対象のRhinoオブジェクトのGUID
+  - 戻り値：オブジェクトの種類に応じた詳細情報
+    - Polylineの場合：
+      - `points` (array) - 頂点座標の配列
+      - `length` (number) - 折れ線の全長
+      - `is_closed` (boolean) - 閉じているかどうか
+      - `segment_count` (number) - セグメント数
+      - `point_count` (number) - 頂点数
+    - Circleの場合：
+      - `center` (object) - 中心点の座標
+      - `radius` (number) - 半径
+      - `circumference` (number) - 円周
+      - `diameter` (number) - 直径
+      - `plane` (object) - 円の平面情報
+    - Surfaceの場合：
+      - `is_periodic` (boolean) - 周期性の有無
+      - `is_singular` (boolean) - 特異点の有無
+      - `domain` (object) - パラメータ領域
+      - `bounding_box` (object) - バウンディングボックス
+    - Brepの場合：
+      - `face_count` (number) - フェース数
+      - `edge_count` (number) - エッジ数
+      - `vertex_count` (number) - 頂点数
+      - `is_solid` (boolean) - ソリッドかどうか
+      - `is_manifold` (boolean) - マニフォールドかどうか
+      - `area` (number) - 表面積
+      - `volume` (number) - 体積（ソリッドの場合のみ）
+
 #### レイヤー操作 (Layer)
 
 - **create_layer**
