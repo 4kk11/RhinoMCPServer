@@ -34,6 +34,13 @@
     <MyDestinationFolder>$(HOME)/Library/Application Support/McNeel/Rhinoceros/9.0/MacPlugins/RhinoMCPServer</MyDestinationFolder>
   </PropertyGroup>
 
+  <!-- ビルド前にToolsプロジェクトをビルド -->
+  <Target Name="BuildTools" BeforeTargets="BeforeBuild">
+    <Message Text="Building Tools projects..." Importance="high" />
+    <Exec Command="dotnet build ../Tools/RhinoMCPTools.Basic/RhinoMCPTools.Basic.csproj -c $(Configuration)" />
+    <Exec Command="dotnet build ../Tools/RhinoMCPTools.Misc/RhinoMCPTools.Misc.csproj -c $(Configuration)" />
+  </Target>
+
   <!-- ビルド後にプラグインとツールをコピー -->
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <ItemGroup>
