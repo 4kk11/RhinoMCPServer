@@ -122,6 +122,15 @@ https://github.com/user-attachments/assets/932d62ed-335f-4238-806a-faafcfacf0b6
     - `y` (number, optional, default: 0) - 球体の中心のY座標
     - `z` (number, optional, default: 0) - 球体の中心のZ座標
 
+- **circle**
+  - 機能：中心点と半径から円を作成
+  - パラメータ：
+    - `center` (object, required) - 円の中心点
+      - `x` (number, required) - X座標
+      - `y` (number, required) - Y座標
+      - `z` (number, optional, default: 0) - Z座標
+    - `radius` (number, required) - 円の半径（0より大きい値）
+
 - **rectangle**
   - 機能：中心点、幅（X方向）、高さ（Y方向）から長方形を作成
   - パラメータ：

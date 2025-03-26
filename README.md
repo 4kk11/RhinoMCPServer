@@ -121,6 +121,15 @@ Basic geometry operation and drafting tools.
     - `x` (number, optional, default: 0) - X coordinate of sphere center
     - `y` (number, optional, default: 0) - Y coordinate of sphere center
     - `z` (number, optional, default: 0) - Z coordinate of sphere center
+  
+- **circle**
+  - Function: Create a circle from center point and radius
+  - Parameters:
+    - `center` (object, required) - Center point of the circle
+      - `x` (number, required) - X coordinate
+      - `y` (number, required) - Y coordinate
+      - `z` (number, optional, default: 0) - Z coordinate
+    - `radius` (number, required) - Circle radius (must be greater than 0)
 
 - **rectangle**
   - Function: Create a rectangle from center point, width (x-direction), and height (y-direction)
