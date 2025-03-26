@@ -26,7 +26,8 @@ namespace RhinoMCPTools.Basic
                     "color": {
                         "type": "string",
                         "description": "The color of the layer in hex format (e.g., '#FF0000' for red).",
-                        "pattern": "^#[0-9A-Fa-f]{6}$"
+                        "pattern": "^#[0-9A-Fa-f]{6}$",
+                        "default": "#000000"
                     },
                     "visible": {
                         "type": "boolean",
@@ -64,7 +65,7 @@ namespace RhinoMCPTools.Basic
 
             // 同名のレイヤーが既に存在するかチェック
             var existingLayer = rhinoDoc.Layers.FindByFullPath(layerName, RhinoMath.UnsetIntIndex);
-            if (existingLayer != -1)
+            if (existingLayer != RhinoMath.UnsetIntIndex)
             {
                 throw new McpServerException($"Layer '{layerName}' already exists");
             }
@@ -72,7 +73,8 @@ namespace RhinoMCPTools.Basic
             // 新しいレイヤーの作成
             var layer = new Layer
             {
-                Name = layerName
+                Name = layerName,
+                Color = Color.Black // デフォルトカラーを黒に設定
             };
 
             // オプションのプロパティを設定
@@ -110,7 +112,7 @@ namespace RhinoMCPTools.Basic
             {
                 var parentName = parentNameValue.ToString();
                 var parentIndex = rhinoDoc.Layers.FindByFullPath(parentName, RhinoMath.UnsetIntIndex);
-                if (parentIndex == -1)
+                if (parentIndex == RhinoMath.UnsetIntIndex)
                 {
                     throw new McpServerException($"Parent layer '{parentName}' not found");
                 }
