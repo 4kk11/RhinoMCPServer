@@ -19,9 +19,9 @@ namespace RhinoMCPTools.Basic
             {
                 "type": "object",
                 "properties": {
-                    "name": {
+                    "full_path": {
                         "type": "string",
-                        "description": "The name of the layer to create."
+                        "description": "The full path of the layer to create (e.g. 'Parent::Child::Grandchild')."
                     },
                     "color": {
                         "type": "string",
@@ -38,13 +38,9 @@ namespace RhinoMCPTools.Basic
                         "type": "boolean",
                         "description": "Whether the layer is locked.",
                         "default": false
-                    },
-                    "parent_name": {
-                        "type": "string",
-                        "description": "The name of the parent layer (optional)."
                     }
                 },
-                "required": ["name"]
+                "required": ["full_path"]
             }
             """);
 
@@ -55,29 +51,23 @@ namespace RhinoMCPTools.Basic
                 throw new McpServerException("Missing required arguments");
             }
 
-            if (!request.Arguments.TryGetValue("name", out var nameValue))
+            if (!request.Arguments.TryGetValue("full_path", out var pathValue))
             {
-                throw new McpServerException("Missing required argument 'name'");
+                throw new McpServerException("Missing required argument 'full_path'");
             }
 
-            var layerName = nameValue.ToString();
+            var fullPath = pathValue.ToString();
             var rhinoDoc = RhinoDoc.ActiveDoc;
 
             // 同名のレイヤーが既に存在するかチェック
-            var existingLayer = rhinoDoc.Layers.FindByFullPath(layerName, RhinoMath.UnsetIntIndex);
+            var existingLayer = rhinoDoc.Layers.FindByFullPath(fullPath, RhinoMath.UnsetIntIndex);
             if (existingLayer != RhinoMath.UnsetIntIndex)
             {
-                throw new McpServerException($"Layer '{layerName}' already exists");
+                throw new McpServerException($"Layer '{fullPath}' already exists");
             }
 
-            // 新しいレイヤーの作成
-            var layer = new Layer
-            {
-                Name = layerName,
-                Color = Color.Black // デフォルトカラーを黒に設定
-            };
-
-            // オプションのプロパティを設定
+            // カラーの取得
+            var color = Color.Black; // デフォルトカラー
             if (request.Arguments.TryGetValue("color", out var colorValue))
             {
                 var colorStr = colorValue.ToString();
@@ -88,7 +78,7 @@ namespace RhinoMCPTools.Basic
                         var r = Convert.ToByte(colorStr.Substring(1, 2), 16);
                         var g = Convert.ToByte(colorStr.Substring(3, 2), 16);
                         var b = Convert.ToByte(colorStr.Substring(5, 2), 16);
-                        layer.Color = Color.FromArgb(r, g, b);
+                        color = Color.FromArgb(r, g, b);
                     }
                     catch
                     {
@@ -97,35 +87,30 @@ namespace RhinoMCPTools.Basic
                 }
             }
 
+            // レイヤーの追加
+            var index = rhinoDoc.Layers.AddPath(fullPath, color);
+            if (index == RhinoMath.UnsetIntIndex)
+            {
+                throw new McpServerException("Failed to create layer");
+            }
+
+            // 作成されたレイヤーの取得と設定の更新
+            var layer = rhinoDoc.Layers[index];
+
+            // 表示/非表示の設定
             if (request.Arguments.TryGetValue("visible", out var visibleValue))
             {
                 layer.IsVisible = Convert.ToBoolean(visibleValue.ToString());
             }
 
+            // ロック状態の設定
             if (request.Arguments.TryGetValue("locked", out var lockedValue))
             {
                 layer.IsLocked = Convert.ToBoolean(lockedValue.ToString());
             }
 
-            // 親レイヤーの設定（指定されている場合）
-            if (request.Arguments.TryGetValue("parent_name", out var parentNameValue))
-            {
-                var parentName = parentNameValue.ToString();
-                var parentIndex = rhinoDoc.Layers.FindByFullPath(parentName, RhinoMath.UnsetIntIndex);
-                if (parentIndex == RhinoMath.UnsetIntIndex)
-                {
-                    throw new McpServerException($"Parent layer '{parentName}' not found");
-                }
-                layer.ParentLayerId = rhinoDoc.Layers[parentIndex].Id;
-            }
-
-            // レイヤーの追加
-            var index = rhinoDoc.Layers.Add(layer);
-            if (index == -1)
-            {
-                throw new McpServerException("Failed to create layer");
-            }
-
+            // プロパティの変更を適用
+            rhinoDoc.Layers.Modify(layer, index, quiet: true);
             rhinoDoc.Views.Redraw();
 
             var response = new
@@ -133,13 +118,12 @@ namespace RhinoMCPTools.Basic
                 status = "success",
                 layer = new
                 {
-                    name = layer.Name,
+                    full_path = fullPath,
                     index = index,
                     id = layer.Id,
                     color = $"#{layer.Color.R:X2}{layer.Color.G:X2}{layer.Color.B:X2}",
                     visible = layer.IsVisible,
-                    locked = layer.IsLocked,
-                    parent_id = layer.ParentLayerId
+                    locked = layer.IsLocked
                 }
             };
 

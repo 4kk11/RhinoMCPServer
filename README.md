@@ -155,17 +155,16 @@ Basic geometry operation and drafting tools.
 - **create_layer**
   - Function: Create a new layer in Rhino
   - Parameters:
-    - `name` (string, required) - Name of the layer to create
+    - `full_path` (string, required) - Full path of the layer to create (e.g., 'Parent::Child::Grandchild')
     - `color` (string, optional) - Color of the layer in hex format (e.g., '#FF0000')
     - `visible` (boolean, optional, default: true) - Whether the layer is visible
     - `locked` (boolean, optional, default: false) - Whether the layer is locked
-    - `parent_name` (string, optional) - Name of the parent layer
 
-- **change_object_layer_by_name**
-  - Function: Change an object's layer by specifying the layer name
+- **change_object_layer_by_full_path**
+  - Function: Change an object's layer by specifying the layer's full path
   - Parameters:
     - `guid` (string, required) - GUID of the target Rhino object
-    - `layer_name` (string, required) - Name of the target layer
+    - `layer_full_path` (string, required) - Full path of the target layer (e.g., 'Parent::Child::Grandchild')
 
 - **change_object_layer_by_index**
   - Function: Change an object's layer by specifying the layer index
