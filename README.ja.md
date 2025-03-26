@@ -150,7 +150,7 @@ https://github.com/user-attachments/assets/932d62ed-335f-4238-806a-faafcfacf0b6
       - `y` (number, required) - Y方向の移動距離
       - `z` (number, optional, default: 0) - Z方向の移動距離
 
-#### オブジェクト操作 (Object)
+#### レイヤー操作 (Layer)
 
 - **create_layer**
   - 機能：新しいレイヤーを作成
@@ -166,6 +166,8 @@ https://github.com/user-attachments/assets/932d62ed-335f-4238-806a-faafcfacf0b6
   - パラメータ：
     - `guid` (string, required) - 対象のRhinoオブジェクトのGUID
     - `layer_name` (string, required) - 移動先のレイヤー名
+
+#### オブジェクト操作 (Object)
 
 - **delete_object**
   - 機能：指定されたGUIDのRhinoオブジェクトを削除

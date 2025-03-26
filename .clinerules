@@ -1,0 +1,13 @@
+# Coding Rules
+
+## Code and Documentation Consistency
+
+### Requirements
+- Source code content and README must always be consistent
+- When editing source code, read the current README and update it if necessary
+
+### Language Support
+- For multilingual support, update the Japanese README.ja.md first
+
+### Notes
+- Outdated documentation will provide incorrect information to users
