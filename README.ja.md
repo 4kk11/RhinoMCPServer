@@ -66,6 +66,9 @@ https://github.com/user-attachments/assets/5eaae01c-27b7-4d4f-961f-a4c1ad64ff7f
 ### 既存の図面をトレースさせる
 https://github.com/user-attachments/assets/932d62ed-335f-4238-806a-faafcfacf0b6
 
+### レイヤー分けさせる
+https://github.com/user-attachments/assets/0a51f35e-3175-4d5f-997a-7dac4c6dad0e
+
 ## システム要件
 
 - Rhino 9 WIP
