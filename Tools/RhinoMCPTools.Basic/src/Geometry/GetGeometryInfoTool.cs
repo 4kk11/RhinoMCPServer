@@ -14,18 +14,21 @@ namespace RhinoMCPTools.Basic
     public class GetGeometryInfoTool : IMCPTool
     {
         public string Name => "get_geometry_info";
-        public string Description => "Gets the geometric information of a Rhino object.";
+        public string Description => "Gets the geometric information of multiple Rhino objects.";
 
         public JsonElement InputSchema => JsonSerializer.Deserialize<JsonElement>("""
             {
                 "type": "object",
                 "properties": {
-                    "guid": {
-                        "type": "string",
-                        "description": "The GUID of the target Rhino object."
+                    "guids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Array of GUIDs of the target Rhino objects."
                     }
                 },
-                "required": ["guid"]
+                "required": ["guids"]
             }
             """);
 
@@ -36,29 +39,97 @@ namespace RhinoMCPTools.Basic
                 throw new McpServerException("Missing required arguments");
             }
 
-            if (!request.Arguments.TryGetValue("guid", out var guidValue))
+            if (!request.Arguments.TryGetValue("guids", out var guidsValue))
             {
-                throw new McpServerException("Missing required argument: 'guid' is required");
+                throw new McpServerException("Missing required argument: 'guids' is required");
+            }
+
+            var jsonElement = (JsonElement)guidsValue;
+            if (jsonElement.ValueKind != JsonValueKind.Array)
+            {
+                throw new McpServerException("The 'guids' argument must be an array");
+            }
+
+            var guidStrings = jsonElement.EnumerateArray()
+                .Select(x => x.GetString())
+                .Where(x => x != null)
+                .ToList();
+
+            if (!guidStrings.Any())
+            {
+                throw new McpServerException("The guids array cannot be empty");
             }
 
             var rhinoDoc = RhinoDoc.ActiveDoc;
-            if (!Guid.TryParse(guidValue.ToString(), out Guid objectGuid))
+            var results = new List<object>();
+            var successCount = 0;
+            var failureCount = 0;
+
+            foreach (var guidString in guidStrings)
             {
-                throw new McpServerException("Invalid GUID format");
+                if (!Guid.TryParse(guidString, out Guid objectGuid))
+                {
+                    failureCount++;
+                    results.Add(new { guid = guidString, status = "failure", reason = "Invalid GUID format" });
+                    continue;
+                }
+
+                var rhinoObject = rhinoDoc.Objects.Find(objectGuid);
+                if (rhinoObject == null)
+                {
+                    failureCount++;
+                    results.Add(new { guid = guidString, status = "failure", reason = $"No object found with GUID: {objectGuid}" });
+                    continue;
+                }
+
+                var geometry = rhinoObject.Geometry;
+                if (geometry == null)
+                {
+                    failureCount++;
+                    results.Add(new { guid = guidString, status = "failure", reason = "Object has no geometry" });
+                    continue;
+                }
+
+                try
+                {
+                    var geometryInfo = GetGeometryInfo(geometry);
+                    successCount++;
+                    results.Add(new {
+                        guid = guidString,
+                        status = "success",
+                        geometry = geometryInfo
+                    });
+                }
+                catch (Exception ex)
+                {
+                    failureCount++;
+                    results.Add(new {
+                        guid = guidString,
+                        status = "failure",
+                        reason = $"Error getting geometry info: {ex.Message}"
+                    });
+                }
             }
 
-            var rhinoObject = rhinoDoc.Objects.Find(objectGuid);
-            if (rhinoObject == null)
+            var response = new
             {
-                throw new McpServerException($"No object found with GUID: {objectGuid}");
-            }
+                summary = new
+                {
+                    totalObjects = guidStrings.Count,
+                    successfulReads = successCount,
+                    failedReads = failureCount
+                },
+                results = results
+            };
 
-            var geometry = rhinoObject.Geometry;
-            if (geometry == null)
+            return Task.FromResult(new CallToolResponse()
             {
-                throw new McpServerException("Object has no geometry");
-            }
+                Content = [new Content() { Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true }), Type = "text" }]
+            });
+        }
 
+        private object GetGeometryInfo(GeometryBase geometry)
+        {
             object geometryInfo;
             
             if (geometry is Curve curve)
@@ -173,16 +244,7 @@ namespace RhinoMCPTools.Basic
                 };
             }
 
-            var response = new
-            {
-                status = "success",
-                geometry = geometryInfo
-            };
-
-            return Task.FromResult(new CallToolResponse()
-            {
-                Content = [new Content() { Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true }), Type = "text" }]
-            });
+            return geometryInfo;
         }
     }
 }
