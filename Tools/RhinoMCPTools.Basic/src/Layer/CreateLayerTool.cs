@@ -110,8 +110,11 @@ namespace RhinoMCPTools.Basic
             }
 
             // プロパティの変更を適用
-            rhinoDoc.Layers.Modify(layer, index, quiet: true);
-            rhinoDoc.Views.Redraw();
+            RhinoApp.InvokeOnUiThread(() =>
+            {
+                rhinoDoc.Layers.Modify(layer, index, quiet: true);
+                rhinoDoc.Views.Redraw();
+            });
 
             var response = new
             {

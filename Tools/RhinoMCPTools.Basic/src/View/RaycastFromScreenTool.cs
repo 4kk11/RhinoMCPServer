@@ -32,11 +32,15 @@ namespace RhinoMCPTools.Basic
                 "properties": {
                     "x": {
                         "type": "number",
-                        "description": "Screen x-coordinate in pixels"
+                        "description": "Normalized x-coordinate (0.0 to 1.0)",
+                        "minimum": 0.0,
+                        "maximum": 1.0
                     },
                     "y": {
                         "type": "number",
-                        "description": "Screen y-coordinate in pixels"
+                        "description": "Normalized y-coordinate (0.0 to 1.0)",
+                        "minimum": 0.0,
+                        "maximum": 1.0
                     },
                     "viewportName": {
                         "type": "string",
@@ -59,8 +63,15 @@ namespace RhinoMCPTools.Basic
                 throw new McpServerException("Missing required arguments: 'x' and 'y' are required");
             }
 
-            var x = Convert.ToDouble(xValue.ToString());
-            var y = Convert.ToDouble(yValue.ToString());
+            // 0.0-1.0の正規化された値を取得
+            var normalizedX = Convert.ToDouble(xValue.ToString());
+            var normalizedY = Convert.ToDouble(yValue.ToString());
+
+            // 値の範囲チェック
+            if (normalizedX < 0.0 || normalizedX > 1.0 || normalizedY < 0.0 || normalizedY > 1.0)
+            {
+                throw new McpServerException("Coordinates must be between 0.0 and 1.0");
+            }
 
             var rhinoDoc = RhinoDoc.ActiveDoc;
             var view = string.IsNullOrEmpty(request.Arguments.TryGetValue("viewportName", out var viewportValue) ? viewportValue.ToString() : null)
@@ -74,7 +85,14 @@ namespace RhinoMCPTools.Basic
 
             // スクリーン座標からレイを生成
             var viewport = view.ActiveViewport;
-            var startPt = new Point2d(x, y);
+            
+            // ビューポートのサイズを取得して正規化された座標をピクセル座標に変換
+            var viewportWidth = viewport.Size.Width;
+            var viewportHeight = viewport.Size.Height;
+            var pixelX = normalizedX * viewportWidth;
+            var pixelY = normalizedY * viewportHeight;
+            
+            var startPt = new Point2d(pixelX, pixelY);
             Line line = viewport.ClientToWorld(startPt);
             var cameraPos = viewport.CameraLocation;
             var rayVec = line.To - cameraPos;
@@ -105,6 +123,13 @@ namespace RhinoMCPTools.Basic
             var hitResult = raycastResults[0];
             var hitObject = rhinoDoc.Objects.ElementAt(hitResult.GeometryIndex);
             var hitGeometry = hitObject.Geometry;
+
+            RhinoApp.InvokeOnUiThread(() =>
+            {
+                rhinoDoc.Objects.Select(hitObject.Id);
+                rhinoDoc.Views.Redraw();
+            });
+            
 
             var response = new
             {
