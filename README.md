@@ -14,6 +14,7 @@ The project consists of the following libraries:
 - `RhinoMCPServer.Plugin`: Main Rhino plugin implementation
 - `RhinoMCPTools.Basic`: Basic geometry operation tools
 - `RhinoMCPTools.Misc`: Utility tools
+- `RhinoMCPTools.Grasshopper`: Grasshopper integration tools
 
 ```mermaid
 graph TB
@@ -308,6 +309,35 @@ Utility tools.
   - Function: Echo back input text (for health check)
   - Parameters:
     - `message` (string, required) - Text to echo back
+
+### RhinoMCPTools.Grasshopper
+Grasshopper integration tools.
+
+- **get_canvas_components**
+  - Function: Retrieve information about all components on the Grasshopper canvas
+  - Parameters:
+    - `include_params` (boolean, optional, default: false) - Whether to include parameter information
+  - Return value: Array of component information
+    - `guid` (string) - Component's GUID
+    - `name` (string) - Component name
+    - `nickname` (string) - Component's nickname
+    - `description` (string) - Component description
+    - `category` (string) - Category
+    - `subcategory` (string) - Subcategory
+    - `position` (object) - Position on canvas
+      - `x` (number) - X coordinate
+      - `y` (number) - Y coordinate
+    - `parameters` (object, included when include_params is true)
+      - `input` (array) - Array of input parameters
+        - `name` (string) - Parameter name
+        - `nickname` (string) - Parameter nickname
+        - `description` (string) - Parameter description
+        - `type_name` (string) - Parameter type name
+      - `output` (array) - Array of output parameters
+        - `name` (string) - Parameter name
+        - `nickname` (string) - Parameter nickname
+        - `description` (string) - Parameter description
+        - `type_name` (string) - Parameter type name
 
 ## Logs
 

@@ -14,6 +14,7 @@ RhinocerosでModel Context Protocol (MCP)サーバーを実行するためのプ
 - `RhinoMCPServer.Plugin`: Rhinoプラグインの本体
 - `RhinoMCPTools.Basic`: 基本的なジオメトリ操作ツール群
 - `RhinoMCPTools.Misc`: ユーティリティツール群
+- `RhinoMCPTools.Grasshopper`: Grasshopper連携ツール群
 
 ```mermaid
 graph TB
@@ -308,6 +309,35 @@ https://github.com/user-attachments/assets/0a51f35e-3175-4d5f-997a-7dac4c6dad0e
   - 機能：入力テキストのエコーバック（ヘルスチェック用）
   - パラメータ：
     - `message` (string, required) - エコーバックするテキスト
+
+### RhinoMCPTools.Grasshopper
+Grasshopper関連の機能を提供するツール群です。
+
+- **get_canvas_components**
+  - 機能：Grasshopperキャンバス上のすべてのコンポーネントの情報を取得
+  - パラメータ：
+    - `include_params` (boolean, optional, default: false) - コンポーネントのパラメータ情報も含めるかどうか
+  - 戻り値：コンポーネント情報の配列
+    - `guid` (string) - コンポーネントのGUID
+    - `name` (string) - コンポーネント名
+    - `nickname` (string) - コンポーネントのニックネーム
+    - `description` (string) - コンポーネントの説明
+    - `category` (string) - カテゴリ
+    - `subcategory` (string) - サブカテゴリ
+    - `position` (object) - キャンバス上の位置
+      - `x` (number) - X座標
+      - `y` (number) - Y座標
+    - `parameters` (object, included when include_params is true)
+      - `input` (array) - 入力パラメータの配列
+        - `name` (string) - パラメータ名
+        - `nickname` (string) - パラメータのニックネーム
+        - `description` (string) - パラメータの説明
+        - `type_name` (string) - パラメータの型名
+      - `output` (array) - 出力パラメータの配列
+        - `name` (string) - パラメータ名
+        - `nickname` (string) - パラメータのニックネーム
+        - `description` (string) - パラメータの説明
+        - `type_name` (string) - パラメータの型名
 
 ## ログ
 
