@@ -39,6 +39,7 @@
     <Message Text="Building Tools projects..." Importance="high" />
     <Exec Command="dotnet build ../Tools/RhinoMCPTools.Basic/RhinoMCPTools.Basic.csproj -c $(Configuration)" />
     <Exec Command="dotnet build ../Tools/RhinoMCPTools.Misc/RhinoMCPTools.Misc.csproj -c $(Configuration)" />
+    <Exec Command="dotnet build ../Tools/RhinoMCPTools.Grasshopper/RhinoMCPTools.Grasshopper.csproj -c $(Configuration)" />
   </Target>
 
   <!-- ビルド後にプラグインとツールをコピー -->
