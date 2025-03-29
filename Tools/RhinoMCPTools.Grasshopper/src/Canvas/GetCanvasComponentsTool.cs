@@ -52,21 +52,21 @@ namespace RhinoMCPTools.Grasshopper
 
                 // Get all components from the canvas
                 var components = doc.Objects
-                    .OfType<IGH_Component>()
-                    .Select(comp => new
+                    .OfType<IGH_DocumentObject>()
+                    .Select(obj => new
                     {
-                        guid = comp.InstanceGuid.ToString(),
-                        name = comp.Name,
-                        nickname = comp.NickName,
-                        description = comp.Description,
-                        category = comp.Category,
-                        subcategory = comp.SubCategory,
+                        guid = obj.InstanceGuid.ToString(),
+                        name = obj.Name,
+                        nickname = obj.NickName,
+                        description = obj.Description,
+                        category = obj.Category,
+                        subcategory = obj.SubCategory,
                         position = new 
                         {
-                            x = comp.Attributes.Pivot.X,
-                            y = comp.Attributes.Pivot.Y
+                            x = obj.Attributes.Pivot.X,
+                            y = obj.Attributes.Pivot.Y
                         },
-                        parameters = includeParams ? new
+                        parameters = includeParams && obj is IGH_Component comp ? new
                         {
                             input = comp.Params.Input.Select(p => new
                             {
