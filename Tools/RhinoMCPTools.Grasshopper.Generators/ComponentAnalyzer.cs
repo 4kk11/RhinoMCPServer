@@ -41,14 +41,14 @@ namespace RhinoMCPTools.Grasshopper.Generators
                 else
                 {
                     // シンボルが見つからない場合は警告を出す
-                    Console.Error.WriteLine($"Warning: Could not find {typeName} symbol.");
+                    ComponentDiagnostics.Report(context, $"Warning: Could not find {typeName} symbol.", DiagnosticSeverity.Warning);
                 }
             }
 
             // どの型シンボルも見つからなかった場合は警告
             if (_baseComponentSymbols.Count == 0)
             {
-                Console.Error.WriteLine("Warning: No base component symbols were found.");
+                ComponentDiagnostics.Report(context, "Warning: No base component symbols were found.", DiagnosticSeverity.Warning);
             }
         }
 
@@ -57,7 +57,6 @@ namespace RhinoMCPTools.Grasshopper.Generators
             if (_baseComponentSymbols.Count == 0) return Enumerable.Empty<INamedTypeSymbol>();
 
             var complition = _context.Compilation;
-            // --- 参照アセンブリの分析を追加 ---
             // Process all referenced assemblies
             foreach (var reference in complition.References)
             {
@@ -68,34 +67,10 @@ namespace RhinoMCPTools.Grasshopper.Generators
                     AnalyzeNamespace(assemblySymbol.GlobalNamespace);
                 }
             }
-            // --- ここまで追加 ---
-
-            // オプション: 現在のコンパイルのソースコードも分析する場合
-            // (もし TestApp プロジェクト内でも GH_Component 派生クラスを定義するなら必要)
-            /*
-            foreach (var tree in _compilation.SyntaxTrees)
-            {
-                var semanticModel = _compilation.GetSemanticModel(tree);
-                var root = tree.GetRoot();
-                var classDeclarations = root.DescendantNodes().OfType<ClassDeclarationSyntax>();
-
-                foreach (var classDeclaration in classDeclarations)
-                {
-                    if (semanticModel.GetDeclaredSymbol(classDeclaration) is INamedTypeSymbol typeSymbol &&
-                        InheritsFromGHComponent(typeSymbol) &&
-                        !typeSymbol.IsAbstract && // 具象クラスのみを対象
-                        HasPublicParameterlessConstructor(typeSymbol)) // public パラメータなしコンストラクタが必要
-                    {
-                        _componentTypes.Add(typeSymbol);
-                    }
-                }
-            }
-            */
 
             return _componentTypes;
         }
 
-        // --- AnalyzeNamespace メソッドを追加 ---
         private void AnalyzeNamespace(INamespaceSymbol namespaceSymbol)
         {
             foreach (var member in namespaceSymbol.GetMembers())
@@ -117,15 +92,9 @@ namespace RhinoMCPTools.Grasshopper.Generators
                     {
                         _componentTypes.Add(typeSymbol);
                     }
-                    // ネストされた型も再帰的に探索する場合
-                    // foreach (var nestedType in typeSymbol.GetTypeMembers().OfType<INamedTypeSymbol>())
-                    // {
-                    //     AnalyzeType(nestedType); // 必要であれば AnalyzeType のようなメソッドを実装
-                    // }
                 }
             }
         }
-        // --- ここまで追加 ---
 
 
         private bool InheritsFromGHComponent(INamedTypeSymbol typeSymbol)
@@ -151,7 +120,6 @@ namespace RhinoMCPTools.Grasshopper.Generators
             return false;
         }
 
-        // --- HasPublicParameterlessConstructor メソッドを追加 ---
         // 生成コードで new ClassName() を呼び出すため、
         // public なパラメータなしコンストラクタの存在を確認
         private bool HasPublicParameterlessConstructor(INamedTypeSymbol typeSymbol)
@@ -161,6 +129,5 @@ namespace RhinoMCPTools.Grasshopper.Generators
                 ctor.Parameters.IsEmpty &&
                 ctor.DeclaredAccessibility == Accessibility.Public);
         }
-        // --- ここまで追加 ---
     }
 }
