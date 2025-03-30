@@ -12,27 +12,49 @@ namespace RhinoMCPTools.Grasshopper.Generators
     internal class ComponentAnalyzer
     {
         private readonly GeneratorExecutionContext _context;
-        private readonly INamedTypeSymbol _ghComponentSymbol;
+        // フィルターに使用する型シンボルのリスト
+        private readonly List<INamedTypeSymbol> _baseComponentSymbols;
         // Use SymbolEqualityComparer for reliable HashSet operations with symbols
         private readonly HashSet<INamedTypeSymbol> _componentTypes = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+
+        // フィルターに使用する型の完全修飾名リスト
+        private static readonly string[] BaseComponentTypeNames = new[]
+        {
+            "Grasshopper.Kernel.GH_Component",
+            "Grasshopper.Kernel.GH_Param`1", 
+        };
 
         public ComponentAnalyzer(GeneratorExecutionContext context)
         {
             _context = context;
-            // GH_Componentの型シンボルを取得
-            _ghComponentSymbol = context.Compilation.GetTypeByMetadataName("Grasshopper.Kernel.GH_Component");
+            _baseComponentSymbols = new List<INamedTypeSymbol>();
 
-            // GH_Component シンボルが見つからない場合は警告を出すなどすると良い
-            if (_ghComponentSymbol == null)
+            // 各基底型のシンボルを取得
+            foreach (var typeName in BaseComponentTypeNames)
             {
-                // ここで Diagnostic を報告することも検討
-                Console.Error.WriteLine("Warning: Could not find Grasshopper.Kernel.GH_Component symbol.");
+                var symbol = context.Compilation.GetTypeByMetadataName(typeName);
+                if (symbol != null)
+                {
+                    _baseComponentSymbols.Add(symbol);
+                    ComponentDiagnostics.Report(context, $"Found base component symbol: {typeName}");
+                }
+                else
+                {
+                    // シンボルが見つからない場合は警告を出す
+                    Console.Error.WriteLine($"Warning: Could not find {typeName} symbol.");
+                }
+            }
+
+            // どの型シンボルも見つからなかった場合は警告
+            if (_baseComponentSymbols.Count == 0)
+            {
+                Console.Error.WriteLine("Warning: No base component symbols were found.");
             }
         }
 
         public IEnumerable<INamedTypeSymbol> FindAllGrasshopperComponents()
         {
-            if (_ghComponentSymbol == null) return Enumerable.Empty<INamedTypeSymbol>();
+            if (_baseComponentSymbols.Count == 0) return Enumerable.Empty<INamedTypeSymbol>();
 
             var complition = _context.Compilation;
             // --- 参照アセンブリの分析を追加 ---
@@ -108,15 +130,21 @@ namespace RhinoMCPTools.Grasshopper.Generators
 
         private bool InheritsFromGHComponent(INamedTypeSymbol typeSymbol)
         {
-            // _ghComponentSymbol のチェックは呼び出し元で行うのでここでは不要
-
             var current = typeSymbol.BaseType; // 基底クラスからチェック開始
             while (current != null)
             {
-                // SymbolEqualityComparer を使って比較する
-                if (SymbolEqualityComparer.Default.Equals(current, _ghComponentSymbol))
+
+                // 現在チェックしている基底クラスの元の型定義を取得
+                // ジェネリック型の場合は <T> の状態 (未束縛)、非ジェネリックならそのまま
+                var originalDefinition = current.IsGenericType ? current.OriginalDefinition : current;
+
+                // いずれかの基底型と一致するかチェック
+                foreach (var baseSymbol in _baseComponentSymbols)
                 {
-                    return true;
+                    if (SymbolEqualityComparer.Default.Equals(originalDefinition, baseSymbol))
+                    {
+                        return true;
+                    }
                 }
                 current = current.BaseType;
             }

@@ -29,6 +29,7 @@ namespace RhinoMCPTools.Grasshopper.Generators
                 var toolClassName = $"{className}Tool";
         
                 var source = $@"
+        #nullable enable
         using System;
         using System.Threading.Tasks;
         using System.Text.Json;
@@ -89,8 +90,8 @@ namespace RhinoMCPTools.Grasshopper.Generators
         
                         // Create and add component
                         var component = new {className}();
-                        component.Attributes.Pivot = new System.Drawing.PointF((float)x, (float)y);
                         doc.AddObject(component, false);
+                        component.Attributes.Pivot = new System.Drawing.PointF((float)x, (float)y);
         
                         // Force complete solution recalculation to update UI
                         component.ExpireSolution(true);
