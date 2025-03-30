@@ -27,6 +27,7 @@ namespace RhinoMCPTools.Grasshopper.Generators
                 var namespaceName = componentType.ContainingNamespace.ToDisplayString();
                 var className = componentType.Name;
                 var toolClassName = $"{className}Tool";
+                var toolName = $"create_{className.ToLower()}_component";
         
                 var source = $@"
         #nullable enable
@@ -45,7 +46,7 @@ namespace RhinoMCPTools.Grasshopper.Generators
         {{
             public class {toolClassName} : IMCPTool
             {{
-                public string Name => ""{className.ToLower()}"";
+                public string Name => ""{toolName}"";
         
                 public string Description {{ get; }}
         
