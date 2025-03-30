@@ -32,6 +32,7 @@ namespace RhinoMCPTools.Grasshopper.Generators
                 var source = $@"
         #nullable enable
         using System;
+        using System.Linq;
         using System.Threading.Tasks;
         using System.Text.Json;
         using Grasshopper;
@@ -112,6 +113,25 @@ namespace RhinoMCPTools.Grasshopper.Generators
                                 {{
                                     x = x,
                                     y = y
+                                }},
+                                parameters = new
+                                {{
+                                    input = component.Params.Input.Select(p => new
+                                    {{
+                                        name = p.Name,
+                                        nickname = p.NickName,
+                                        description = p.Description,
+                                        type_name = p.TypeName,
+                                        param_id = p.InstanceGuid.ToString()
+                                    }}).ToArray(),
+                                    output = component.Params.Output.Select(p => new
+                                    {{
+                                        name = p.Name,
+                                        nickname = p.NickName,
+                                        description = p.Description,
+                                        type_name = p.TypeName,
+                                        param_id = p.InstanceGuid.ToString()
+                                    }}).ToArray()
                                 }}
                             }}
                         }};
