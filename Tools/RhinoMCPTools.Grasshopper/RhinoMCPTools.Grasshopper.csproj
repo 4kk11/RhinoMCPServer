@@ -18,8 +18,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="RhinoCommon" Version="8.0.23304.9001" ExcludeAssets="runtime" />
-    <PackageReference Include="Grasshopper" Version="8.0.23304.9001" ExcludeAssets="runtime" />
+    <PackageReference Include="RhinoCommon" Version="8.18.25084.13001-rc" ExcludeAssets="runtime" />
+    <PackageReference Include="Grasshopper" Version="8.18.25084.13001-rc" ExcludeAssets="runtime" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,4 +29,12 @@
     </ProjectReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="CurveComponents">
+      <HintPath>/Applications/Rhino 8.app/Contents/Frameworks/RhCore.framework/Versions/A/Resources/ManagedPlugIns/GrasshopperPlugin.rhp/Components/CurveComponents.gha</HintPath>
+      <Private>false</Private>
+      <SpecificVersion>false</SpecificVersion>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </Reference>
+  </ItemGroup>
 </Project>
