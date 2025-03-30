@@ -31,7 +31,8 @@
 
   <ItemGroup>
     <Reference Include="CurveComponents">
-      <HintPath>/Applications/Rhino 8.app/Contents/Frameworks/RhCore.framework/Versions/A/Resources/ManagedPlugIns/GrasshopperPlugin.rhp/Components/CurveComponents.gha</HintPath>
+      <!-- <HintPath>/Applications/Rhino 8.app/Contents/Frameworks/RhCore.framework/Versions/A/Resources/ManagedPlugIns/GrasshopperPlugin.rhp/Components/CurveComponents.gha</HintPath> -->
+      <HintPath>lib/CurveComponents.dll</HintPath>
       <Private>false</Private>
       <SpecificVersion>false</SpecificVersion>
       <ExcludeAssets>runtime</ExcludeAssets>
