@@ -36,5 +36,12 @@
       <SpecificVersion>false</SpecificVersion>
       <ExcludeAssets>runtime</ExcludeAssets>
     </Reference>
+    
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RhinoMCPTools.Grasshopper.Generators\RhinoMCPTools.Grasshopper.Generators.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="true" />
   </ItemGroup>
 </Project>
