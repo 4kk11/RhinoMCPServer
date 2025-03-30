@@ -41,6 +41,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="VectorComponents">
+      <HintPath>lib/VectorComponents.dll</HintPath>
+      <Private>false</Private>
+      <SpecificVersion>false</SpecificVersion>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </Reference>
+    
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\RhinoMCPTools.Grasshopper.Generators\RhinoMCPTools.Grasshopper.Generators.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="true" />
