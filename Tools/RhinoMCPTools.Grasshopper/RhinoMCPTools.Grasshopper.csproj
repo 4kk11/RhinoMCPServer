@@ -37,17 +37,30 @@
       <SpecificVersion>false</SpecificVersion>
       <ExcludeAssets>runtime</ExcludeAssets>
     </Reference>
-    
-  </ItemGroup>
-
-  <ItemGroup>
     <Reference Include="VectorComponents">
       <HintPath>lib/VectorComponents.dll</HintPath>
       <Private>false</Private>
       <SpecificVersion>false</SpecificVersion>
       <ExcludeAssets>runtime</ExcludeAssets>
     </Reference>
-    
+    <Reference Include="MathComponents">
+      <HintPath>lib/MathComponents.dll</HintPath>
+      <Private>false</Private>
+      <SpecificVersion>false</SpecificVersion>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </Reference>
+    <Reference Include="SurfaceComponents">
+      <HintPath>lib/SurfaceComponents.dll</HintPath>
+      <Private>false</Private>
+      <SpecificVersion>false</SpecificVersion>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </Reference>
+    <Reference Include="XformComponents">
+      <HintPath>lib/XformComponents.dll</HintPath>
+      <Private>false</Private>
+      <SpecificVersion>false</SpecificVersion>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>

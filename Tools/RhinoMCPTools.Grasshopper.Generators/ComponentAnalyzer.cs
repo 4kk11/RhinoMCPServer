@@ -88,7 +88,8 @@ namespace RhinoMCPTools.Grasshopper.Generators
                         typeSymbol.DeclaredAccessibility == Accessibility.Public && // 通常コンポーネントはPublic
                         InheritsFromGHComponent(typeSymbol) &&
                         HasPublicParameterlessConstructor(typeSymbol) &&
-                        !typeSymbol.Name.Contains("OBSOLETE")) // OBSOLETEという文字列を含む型名は除外
+                        !typeSymbol.Name.Contains("OBSOLETE") && // OBSOLETEという文字列を含む型名は除外
+                        !typeSymbol.GetAttributes().Any(attr => attr.AttributeClass?.ToDisplayString() == "System.ObsoleteAttribute")) // [Obsolete]属性を持つクラスを除外
                     {
                         _componentTypes.Add(typeSymbol);
                     }
