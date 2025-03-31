@@ -13,9 +13,8 @@ namespace RhinoMCPTools.Grasshopper.Analysis
     /// </summary>
     public class GrasshopperComponentAnalyzer
     {
-        private static readonly object _cacheLock = new object();
         private static Dictionary<string, ComponentInfo>? _componentCache;
-        private static readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(5);
+        private static bool _initialized;
 
         // フィルターに使用する型の完全修飾名リスト
         private static readonly string[] BaseComponentTypeNames = new[]
@@ -29,12 +28,35 @@ namespace RhinoMCPTools.Grasshopper.Analysis
         /// </summary>
         public class ComponentInfo
         {
-            public required string Name { get; set; }
-            public required string Description { get; set; }
-            public required string FullTypeName { get; set; }
+            public string Name { get; set; } = string.Empty;
+            public string Description { get; set; } = string.Empty;
+            public string FullTypeName { get; set; } = string.Empty;
             public bool IsParam { get; set; }
-            public required string Category { get; set; }
-            public required string SubCategory { get; set; }
+            public string Category { get; set; } = "Unknown";
+            public string SubCategory { get; set; } = "Unknown";
+            public Type ComponentType { get; set; } = null!;
+
+            public IGH_DocumentObject CreateInstance()
+            {
+                var instance = Activator.CreateInstance(ComponentType) as IGH_DocumentObject;
+                if (instance == null)
+                {
+                    throw new McpServerException($"Failed to create component of type '{FullTypeName}'");
+                }
+                return instance;
+            }
+        }
+
+        /// <summary>
+        /// コンストラクタで初期化を行います
+        /// </summary>
+        public GrasshopperComponentAnalyzer()
+        {
+            if (!_initialized)
+            {
+                InitializeCache();
+                _initialized = true;
+            }
         }
 
         /// <summary>
@@ -42,14 +64,7 @@ namespace RhinoMCPTools.Grasshopper.Analysis
         /// </summary>
         public IEnumerable<ComponentInfo> GetAllComponents()
         {
-            lock (_cacheLock)
-            {
-                if (ShouldUpdateCache())
-                {
-                    UpdateComponentCache();
-                }
-                return _componentCache?.Values ?? Enumerable.Empty<ComponentInfo>();
-            }
+            return _componentCache?.Values ?? Enumerable.Empty<ComponentInfo>();
         }
 
         /// <summary>
@@ -57,29 +72,10 @@ namespace RhinoMCPTools.Grasshopper.Analysis
         /// </summary>
         public ComponentInfo? GetComponentByTypeName(string typeName)
         {
-            lock (_cacheLock)
-            {
-                if (ShouldUpdateCache())
-                {
-                    UpdateComponentCache();
-                }
-                
-                if (_componentCache == null)
-                {
-                    return null;
-                }
-
-                _componentCache.TryGetValue(typeName, out var componentInfo);
-                return componentInfo;
-            }
+            return _componentCache?.GetValueOrDefault(typeName);
         }
 
-        private bool ShouldUpdateCache()
-        {
-            return _componentCache == null;
-        }
-
-        private void UpdateComponentCache()
+        private void InitializeCache()
         {
             var newCache = new Dictionary<string, ComponentInfo>();
             var assemblies = AppDomain.CurrentDomain.GetAssemblies()
@@ -129,15 +125,15 @@ namespace RhinoMCPTools.Grasshopper.Analysis
 
                         var isParam = instance is IGH_Param;
                         
-                        Console.WriteLine($"Found component: {type.FullName}");
                         components.Add(new ComponentInfo
                         {
-                            Name = instance.Name,
-                            Description = instance.Description,
+                            Name = instance.Name ?? string.Empty,
+                            Description = instance.Description ?? string.Empty,
                             FullTypeName = type.FullName ?? string.Empty,
                             IsParam = isParam,
-                            Category = instance.Category,
-                            SubCategory = instance.SubCategory
+                            Category = instance.Category ?? "Unknown",
+                            SubCategory = instance.SubCategory ?? "Unknown",
+                            ComponentType = type
                         });
                     }
                     catch

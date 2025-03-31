@@ -81,37 +81,8 @@ namespace RhinoMCPTools.Grasshopper.Canvas
                     throw new McpServerException($"Component type '{typeName}' not found");
                 }
 
-                // コンポーネントの型を取得
-                var componentType = Type.GetType(typeName);
-                if (componentType == null)
-                {
-                    // Type.GetTypeで見つからない場合は、AppDomainから検索
-                    componentType = AppDomain.CurrentDomain.GetAssemblies()
-                        .Where(a => !a.IsDynamic)
-                        .SelectMany(a =>
-                        {
-                            try
-                            {
-                                return a.GetTypes();
-                            }
-                            catch
-                            {
-                                return Type.EmptyTypes;
-                            }
-                        })
-                        .FirstOrDefault(t => t.FullName == typeName);
-
-                    if (componentType == null)
-                    {
-                        throw new McpServerException($"Component type '{typeName}' not found");
-                    }
-                }
-
                 // コンポーネントのインスタンスを作成
-                if (Activator.CreateInstance(componentType) is not IGH_DocumentObject component)
-                {
-                    throw new McpServerException($"Failed to create component of type '{typeName}'");
-                }
+                var component = componentInfo.CreateInstance();
 
                 // コンポーネントをドキュメントに追加
                 doc.AddObject(component, false);
