@@ -29,7 +29,7 @@
     </ProjectReference>
   </ItemGroup>
 
-  <ItemGroup>
+  <!-- <ItemGroup>
     <Reference Include="CurveComponents">
       <!-- <HintPath>/Applications/Rhino 8.app/Contents/Frameworks/RhCore.framework/Versions/A/Resources/ManagedPlugIns/GrasshopperPlugin.rhp/Components/CurveComponents.gha</HintPath> -->
       <HintPath>lib/CurveComponents.dll</HintPath>
@@ -61,11 +61,11 @@
       <SpecificVersion>false</SpecificVersion>
       <ExcludeAssets>runtime</ExcludeAssets>
     </Reference>
-  </ItemGroup>
+  </ItemGroup> -->
 
-  <ItemGroup>
+  <!-- <ItemGroup>
     <ProjectReference Include="..\RhinoMCPTools.Grasshopper.Generators\RhinoMCPTools.Grasshopper.Generators.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="true" />
-  </ItemGroup>
+  </ItemGroup> -->
 </Project>
