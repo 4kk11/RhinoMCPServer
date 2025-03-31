@@ -71,6 +71,9 @@ https://github.com/user-attachments/assets/932d62ed-335f-4238-806a-faafcfacf0b6
 ### レイヤー分けさせる
 https://github.com/user-attachments/assets/0a51f35e-3175-4d5f-997a-7dac4c6dad0e
 
+### Grasshopperエージェント
+https://github.com/user-attachments/assets/114e1331-c6fe-45f9-b28c-c88799c0643c
+
 ## システム要件
 
 - Rhino 9 WIP
