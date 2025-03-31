@@ -34,13 +34,14 @@ graph TB
       subgraph "MCP Tools (Dynamically Extensible)"
           C[RhinoMCPTools.Basic<br>Basic Geometry Tools]
           D[RhinoMCPTools.Misc<br>Utility Tools]
+          E[RhinoMCPTools.Grasshopper<br>Grasshopper Component Operations]
       end
     end
-
 
     A --> B
     C --> B
     D --> B
+    E --> B
     X -->|"SSE connection"| A
 
     classDef plugin fill:#949,stroke:#333,stroke-width:2px;
@@ -49,7 +50,7 @@ graph TB
 
     class A plugin;
     class B common;
-    class C,D tools;
+    class C,D,E tools;
 ```
 
 ## Plugin Extensibility
@@ -309,9 +310,10 @@ Utility tools.
   - Function: Echo back input text (for health check)
   - Parameters:
     - `message` (string, required) - Text to echo back
-
 ### RhinoMCPTools.Grasshopper
 Grasshopper integration tools.
+
+#### Component Management (Components)
 
 - **get_canvas_components**
   - Function: Retrieve information about all components on the Grasshopper canvas
@@ -338,6 +340,70 @@ Grasshopper integration tools.
         - `nickname` (string) - Parameter nickname
         - `description` (string) - Parameter description
         - `type_name` (string) - Parameter type name
+
+- **get_available_components**
+  - Function: Get a list of available Grasshopper components
+  - Parameters:
+    - `filter` (string, optional) - Filter components by name
+    - `category` (string, optional) - Filter components by category
+  - Return value: Array of component information
+    - `name` (string) - Component name
+    - `description` (string) - Component description
+    - `type_name` (string) - Component type name
+    - `is_param` (boolean) - Whether it's a parameter component
+    - `category` (string) - Category
+    - `sub_category` (string) - Subcategory
+
+- **create_component**
+  - Function: Create a specified Grasshopper component on the canvas
+  - Parameters:
+    - `type_name` (string, required) - Fully qualified name of the component to create
+    - `x` (number, optional, default: 0) - X coordinate on canvas
+    - `y` (number, optional, default: 0) - Y coordinate on canvas
+  - Return value: Created component information
+    - `guid` (string) - Component's GUID
+    - `name` (string) - Component name
+    - `position` (object) - Placement position
+      - `x` (number) - X coordinate
+      - `y` (number) - Y coordinate
+    - `parameters` (object) - Parameter information
+      - `input` (array) - Array of input parameters
+      - `output` (array) - Array of output parameters
+
+- **delete_component**
+  - Function: Delete a component from the canvas
+  - Parameters:
+    - `component_id` (string, required) - GUID of the component to delete
+
+#### Wire Connections (Wires)
+
+- **connect_component_wire**
+  - Function: Connect a wire between two component parameters
+  - Parameters:
+    - `source_param_id` (string, required) - GUID of the source parameter
+    - `target_param_id` (string, required) - GUID of the target parameter
+
+- **disconnect_component_wire**
+  - Function: Disconnect a wire between component parameters
+  - Parameters:
+    - `source_param_id` (string, required) - GUID of the source parameter
+    - `target_param_id` (string, required) - GUID of the target parameter
+
+#### Parameter Control (Parameters)
+
+- **configure_number_slider**
+  - Function: Configure settings for a number slider component
+  - Parameters:
+    - `slider_id` (string, required) - GUID of the slider component
+    - `value` (number, required) - Value to set
+    - `minimum` (number, optional) - Minimum value setting
+    - `maximum` (number, optional) - Maximum value setting
+
+- **set_panel_text**
+  - Function: Set text for a panel component
+  - Parameters:
+    - `panel_id` (string, required) - GUID of the panel component
+    - `text` (string, required) - Text to set
 
 ## Logs
 

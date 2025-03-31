@@ -14,7 +14,7 @@ RhinocerosでModel Context Protocol (MCP)サーバーを実行するためのプ
 - `RhinoMCPServer.Plugin`: Rhinoプラグインの本体
 - `RhinoMCPTools.Basic`: 基本的なジオメトリ操作ツール群
 - `RhinoMCPTools.Misc`: ユーティリティツール群
-- `RhinoMCPTools.Grasshopper`: Grasshopper連携ツール群
+- `RhinoMCPTools.Grasshopper`: Grasshopperコンポーネントの操作・制御を行うツール群
 
 ```mermaid
 graph TB
@@ -34,13 +34,14 @@ graph TB
       subgraph "MCPツール(動的に拡張可能)"
           C[RhinoMCPTools.Basic<br>基本ジオメトリツール]
           D[RhinoMCPTools.Misc<br>ユーティリティツール]
+          E[RhinoMCPTools.Grasshopper<br>Grasshopperコンポーネント操作]
       end
     end
-
 
     A --> B
     C --> B
     D --> B
+    E --> B
     X -->|"SSE接続"| A
 
     classDef plugin fill:#949,stroke:#333,stroke-width:2px;
@@ -49,7 +50,7 @@ graph TB
 
     class A plugin;
     class B common;
-    class C,D tools;
+    class C,D,E tools;
 ```
 
 ## プラグイン拡張性
@@ -313,15 +314,17 @@ https://github.com/user-attachments/assets/0a51f35e-3175-4d5f-997a-7dac4c6dad0e
 ### RhinoMCPTools.Grasshopper
 Grasshopper関連の機能を提供するツール群です。
 
+#### コンポーネント管理 (Components)
+
 - **get_canvas_components**
-  - 機能：Grasshopperキャンバス上のすべてのコンポーネントの情報を取得
+  - 機能：現在のキャンバス上のすべてのコンポーネント情報を取得
   - パラメータ：
-    - `include_params` (boolean, optional, default: false) - コンポーネントのパラメータ情報も含めるかどうか
+    - `include_params` (boolean, optional, default: false) - パラメータ情報も含めるかどうか
   - 戻り値：コンポーネント情報の配列
     - `guid` (string) - コンポーネントのGUID
     - `name` (string) - コンポーネント名
-    - `nickname` (string) - コンポーネントのニックネーム
-    - `description` (string) - コンポーネントの説明
+    - `nickname` (string) - ニックネーム
+    - `description` (string) - 説明
     - `category` (string) - カテゴリ
     - `subcategory` (string) - サブカテゴリ
     - `position` (object) - キャンバス上の位置
@@ -329,15 +332,71 @@ Grasshopper関連の機能を提供するツール群です。
       - `y` (number) - Y座標
     - `parameters` (object, included when include_params is true)
       - `input` (array) - 入力パラメータの配列
-        - `name` (string) - パラメータ名
-        - `nickname` (string) - パラメータのニックネーム
-        - `description` (string) - パラメータの説明
-        - `type_name` (string) - パラメータの型名
       - `output` (array) - 出力パラメータの配列
-        - `name` (string) - パラメータ名
-        - `nickname` (string) - パラメータのニックネーム
-        - `description` (string) - パラメータの説明
-        - `type_name` (string) - パラメータの型名
+
+- **get_available_components**
+  - 機能：利用可能なGrasshopperコンポーネントの一覧を取得
+  - パラメータ：
+    - `filter` (string, optional) - コンポーネント名でフィルタリング
+    - `category` (string, optional) - カテゴリでフィルタリング
+  - 戻り値：コンポーネント情報の配列
+    - `name` (string) - コンポーネント名
+    - `description` (string) - コンポーネントの説明
+    - `type_name` (string) - コンポーネントの型名
+    - `is_param` (boolean) - パラメータコンポーネントかどうか
+    - `category` (string) - カテゴリ
+    - `sub_category` (string) - サブカテゴリ
+
+- **create_component**
+  - 機能：指定されたGrasshopperコンポーネントをキャンバス上に作成
+  - パラメータ：
+    - `type_name` (string, required) - 作成するコンポーネントの完全修飾名
+    - `x` (number, optional, default: 0) - キャンバス上のX座標
+    - `y` (number, optional, default: 0) - キャンバス上のY座標
+  - 戻り値：作成されたコンポーネントの情報
+    - `guid` (string) - コンポーネントのGUID
+    - `name` (string) - コンポーネント名
+    - `position` (object) - 配置位置
+      - `x` (number) - X座標
+      - `y` (number) - Y座標
+    - `parameters` (object) - パラメータ情報
+      - `input` (array) - 入力パラメータの配列
+      - `output` (array) - 出力パラメータの配列
+
+- **delete_component**
+  - 機能：指定されたコンポーネントをキャンバスから削除
+  - パラメータ：
+    - `component_id` (string, required) - 削除するコンポーネントのGUID
+
+#### ワイヤー接続 (Wires)
+
+- **connect_component_wire**
+  - 機能：2つのコンポーネントパラメータ間にワイヤーを接続
+  - パラメータ：
+    - `source_param_id` (string, required) - 接続元パラメータのGUID
+    - `target_param_id` (string, required) - 接続先パラメータのGUID
+
+- **disconnect_component_wire**
+  - 機能：コンポーネントパラメータ間のワイヤーを切断
+  - パラメータ：
+    - `source_param_id` (string, required) - 切断元パラメータのGUID
+    - `target_param_id` (string, required) - 切断先パラメータのGUID
+
+#### パラメータ制御 (Parameters)
+
+- **configure_number_slider**
+  - 機能：数値スライダーコンポーネントの設定を変更
+  - パラメータ：
+    - `slider_id` (string, required) - スライダーコンポーネントのGUID
+    - `value` (number, required) - 設定する値
+    - `minimum` (number, optional) - 最小値の設定
+    - `maximum` (number, optional) - 最大値の設定
+
+- **set_panel_text**
+  - 機能：パネルコンポーネントのテキストを設定
+  - パラメータ：
+    - `panel_id` (string, required) - パネルコンポーネントのGUID
+    - `text` (string, required) - 設定するテキスト
 
 ## ログ
 
