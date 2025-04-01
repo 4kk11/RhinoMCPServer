@@ -120,7 +120,8 @@ namespace RhinoMCPTools.Grasshopper.Canvas
                                     nickname = p.NickName,
                                     description = p.Description,
                                     type_name = p.TypeName,
-                                    param_id = p.InstanceGuid.ToString()
+                                    param_id = p.InstanceGuid.ToString(),
+                                    optional = p.Optional,
                                 }).ToArray()
                                 : Array.Empty<object>(),
                             output = component is IGH_Component ghOutputComponent

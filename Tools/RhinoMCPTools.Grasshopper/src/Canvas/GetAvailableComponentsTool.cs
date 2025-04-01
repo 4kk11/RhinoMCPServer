@@ -13,7 +13,7 @@ using Grasshopper;
 namespace RhinoMCPTools.Grasshopper.Canvas
 {
     /// <summary>
-    /// 利用可能なGrasshopperコンポーネントの一覧を取得するツール
+    /// Tool to retrieve a list of available Grasshopper components
     /// </summary>
     public class GetAvailableComponentsTool : IMCPTool
     {
@@ -21,19 +21,19 @@ namespace RhinoMCPTools.Grasshopper.Canvas
 
         public string Name => "get_available_components";
 
-        public string Description => "利用可能なGrasshopperコンポーネントの一覧を取得します";
+        public string Description => "Retrieves a list of available Grasshopper components";
 
         public JsonElement InputSchema => JsonSerializer.Deserialize<JsonElement>(@"{
             ""type"": ""object"",
             ""properties"": {
                 ""filter"": {
                     ""type"": ""string"",
-                    ""description"": ""コンポーネント名でフィルタリング（オプション）"",
+                    ""description"": ""Filter by component name (optional)"",
                     ""default"": """"
                 },
                 ""category"": {
                     ""type"": ""string"",
-                    ""description"": ""カテゴリでフィルタリング（オプション）"",
+                    ""description"": ""Filter by category (optional)"",
                     ""default"": """"
                 }
             }
