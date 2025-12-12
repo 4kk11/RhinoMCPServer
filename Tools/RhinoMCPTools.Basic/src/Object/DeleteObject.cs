@@ -1,4 +1,5 @@
-using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using Rhino;
 using RhinoMCPServer.Common;
@@ -26,17 +27,17 @@ namespace RhinoMCPTools.Basic
             }
             """);
 
-        public Task<CallToolResponse> ExecuteAsync(CallToolRequestParams request, IMcpServer? server)
+        public Task<CallToolResult> ExecuteAsync(CallToolRequestParams request, McpServer? server)
         {
             if (request.Arguments is null || !request.Arguments.TryGetValue("guid", out var guidValue))
             {
-                throw new McpServerException("Missing required argument 'guid'");
+                throw new McpProtocolException("Missing required argument 'guid'");
             }
 
             var rhinoDoc = RhinoDoc.ActiveDoc;
             if (!Guid.TryParse(guidValue.ToString(), out var guid))
             {
-                throw new McpServerException("Invalid GUID format");
+                throw new McpProtocolException("Invalid GUID format");
             }
 
             var success = rhinoDoc.Objects.Delete(guid, true);
@@ -51,9 +52,9 @@ namespace RhinoMCPTools.Basic
                 }
             };
 
-            return Task.FromResult(new CallToolResponse()
+            return Task.FromResult(new CallToolResult()
             {
-                Content = [new Content() { Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true }), Type = "text" }]
+                Content = [new TextContentBlock() { Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true }) }]
             });
         }
     }

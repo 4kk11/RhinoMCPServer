@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using Grasshopper.Kernel;
 using RhinoMCPServer.Common;
-using ModelContextProtocol.Server;
+using ModelContextProtocol;
 
 namespace RhinoMCPTools.Grasshopper.Analysis
 {
@@ -41,7 +41,7 @@ namespace RhinoMCPTools.Grasshopper.Analysis
                 var instance = Activator.CreateInstance(ComponentType) as IGH_DocumentObject;
                 if (instance == null)
                 {
-                    throw new McpServerException($"Failed to create component of type '{FullTypeName}'");
+                    throw new McpProtocolException($"Failed to create component of type '{FullTypeName}'");
                 }
                 return instance;
             }
@@ -145,7 +145,7 @@ namespace RhinoMCPTools.Grasshopper.Analysis
             }
             catch (Exception ex)
             {
-                throw new McpServerException($"Error analyzing assembly {assembly.FullName}: {ex.Message}", ex);
+                throw new McpProtocolException($"Error analyzing assembly {assembly.FullName}: {ex.Message}", ex);
             }
 
             return components;

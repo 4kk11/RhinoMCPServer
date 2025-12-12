@@ -2,7 +2,8 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Text.Json;
-using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using RhinoMCPServer.Common;
 using Grasshopper;
@@ -49,14 +50,14 @@ namespace RhinoMCPTools.Grasshopper.Canvas
             ""required"": [""type_name""]
         }");
 
-        public Task<CallToolResponse> ExecuteAsync(CallToolRequestParams request, IMcpServer? server)
+        public Task<CallToolResult> ExecuteAsync(CallToolRequestParams request, McpServer? server)
         {
             try
             {
                 // パラメータの取得
                 if (!request.Arguments.TryGetValue("type_name", out var typeNameValue))
                 {
-                    throw new McpServerException("type_name parameter is required");
+                    throw new McpProtocolException("type_name parameter is required");
                 }
                 var typeName = typeNameValue.ToString();
 
@@ -71,14 +72,14 @@ namespace RhinoMCPTools.Grasshopper.Canvas
                 var doc = Instances.ActiveDocument;
                 if (doc == null)
                 {
-                    throw new McpServerException("No active Grasshopper document found");
+                    throw new McpProtocolException("No active Grasshopper document found");
                 }
 
                 // キャッシュからコンポーネント情報を取得
                 var componentInfo = _analyzer.GetComponentByTypeName(typeName);
                 if (componentInfo == null)
                 {
-                    throw new McpServerException($"Component type '{typeName}' not found");
+                    throw new McpProtocolException($"Component type '{typeName}' not found");
                 }
 
                 // コンポーネントのインスタンスを作成
@@ -138,21 +139,20 @@ namespace RhinoMCPTools.Grasshopper.Canvas
                     }
                 };
 
-                return Task.FromResult(new CallToolResponse()
+                return Task.FromResult(new CallToolResult()
                 {
-                    Content = [new Content()
+                    Content = [new TextContentBlock()
                     {
                         Text = JsonSerializer.Serialize(response, new JsonSerializerOptions
                         {
                             WriteIndented = true
                         }),
-                        Type = "text"
                     }]
                 });
             }
             catch (Exception ex)
             {
-                throw new McpServerException($"Error creating component: {ex.Message}", ex);
+                throw new McpProtocolException($"Error creating component: {ex.Message}", ex);
             }
         }
     }

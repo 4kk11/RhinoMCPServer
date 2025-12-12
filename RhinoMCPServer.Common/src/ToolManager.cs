@@ -1,4 +1,5 @@
-using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using System;
 using System.Collections.Generic;
@@ -18,17 +19,17 @@ namespace RhinoMCPServer.Common
             // プラグインディレクトリを設定（RhinoのMacPluginsディレクトリ内のToolsフォルダ）
             string pluginPath = Path.GetDirectoryName(typeof(ToolManager).Assembly.Location)!;
             _pluginDirectory = Path.Combine(pluginPath, "Tools");
-            
+
             // プラグインディレクトリが存在しない場合は作成
             Directory.CreateDirectory(_pluginDirectory);
 
             _pluginLoader = new ToolPluginLoader(_pluginDirectory);
-            
+
             // プラグインを読み込む
             _pluginLoader.LoadPlugins();
         }
 
-        public Task<ListToolsResult> ListToolsAsync()
+        public ValueTask<ListToolsResult> ListToolsAsync()
         {
             var tools = _pluginLoader.LoadedTools.Values.Select(t => new Tool
             {
@@ -37,19 +38,19 @@ namespace RhinoMCPServer.Common
                 InputSchema = t.InputSchema
             }).ToList();
 
-            return Task.FromResult(new ListToolsResult { Tools = tools });
+            return ValueTask.FromResult(new ListToolsResult { Tools = tools });
         }
 
-        public Task<CallToolResponse> ExecuteToolAsync(CallToolRequestParams request, IMcpServer? server)
+        public Task<CallToolResult> ExecuteToolAsync(CallToolRequestParams request, McpServer? server)
         {
             if (request.Name is null)
             {
-                throw new McpServerException("Missing required parameter 'name'");
+                throw new McpProtocolException("Missing required parameter 'name'", McpErrorCode.InvalidParams);
             }
 
             if (!_pluginLoader.LoadedTools.TryGetValue(request.Name, out var tool))
             {
-                throw new McpServerException($"Unknown tool: {request.Name}");
+                throw new McpProtocolException($"Unknown tool: {request.Name}", McpErrorCode.InvalidRequest);
             }
 
             return tool.ExecuteAsync(request, server);

@@ -31,7 +31,7 @@
 
   <!-- MacOS -->
   <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-    <MyDestinationFolder>$(HOME)/Library/Application Support/McNeel/Rhinoceros/9.0/MacPlugins/RhinoMCPServer</MyDestinationFolder>
+    <MyDestinationFolder>$(HOME)/Library/Application Support/McNeel/Rhinoceros/8.0/MacPlugins/RhinoMCPServer</MyDestinationFolder>
   </PropertyGroup>
 
   <!-- ビルド前にToolsプロジェクトをビルド -->

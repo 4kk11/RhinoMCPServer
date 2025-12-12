@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
-using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using Rhino;
 using System.Text.Json;
@@ -33,23 +34,23 @@ namespace RhinoMCPTools.Basic
                 }
                 """);
 
-        public Task<CallToolResponse> ExecuteAsync(CallToolRequestParams request, IMcpServer? server)
+        public Task<CallToolResult> ExecuteAsync(CallToolRequestParams request, McpServer? server)
         {
             if (request.Arguments is null)
             {
-                throw new McpServerException("Missing required arguments");
+                throw new McpProtocolException("Missing required arguments");
             }
 
             if (!request.Arguments.TryGetValue("guids", out var guidsValue) ||
                 !request.Arguments.TryGetValue("layer_index", out var layerIndexValue))
             {
-                throw new McpServerException("Missing required arguments: 'guids' and 'layer_index' are required");
+                throw new McpProtocolException("Missing required arguments: 'guids' and 'layer_index' are required");
             }
 
             var jsonElement = (JsonElement)guidsValue;
             if (jsonElement.ValueKind != JsonValueKind.Array)
             {
-                throw new McpServerException("The 'guids' argument must be an array");
+                throw new McpProtocolException("The 'guids' argument must be an array");
             }
 
             var guidStrings = jsonElement.EnumerateArray()
@@ -59,13 +60,13 @@ namespace RhinoMCPTools.Basic
 
             if (!guidStrings.Any())
             {
-                throw new McpServerException("The guids array cannot be empty");
+                throw new McpProtocolException("The guids array cannot be empty");
             }
 
             // レイヤーインデックスを解析して検証
             if (!int.TryParse(layerIndexValue.ToString(), out int layerIndex))
             {
-                throw new McpServerException("Invalid layer index format");
+                throw new McpProtocolException("Invalid layer index format");
             }
 
             var rhinoDoc = RhinoDoc.ActiveDoc;
@@ -73,7 +74,7 @@ namespace RhinoMCPTools.Basic
             // レイヤーが存在するか確認
             if (layerIndex < 0 || layerIndex >= rhinoDoc.Layers.Count)
             {
-                throw new McpServerException($"Layer index {layerIndex} is out of range");
+                throw new McpProtocolException($"Layer index {layerIndex} is out of range");
             }
 
             var results = new List<object>();
@@ -120,9 +121,9 @@ namespace RhinoMCPTools.Basic
                 results = results
             };
 
-            return Task.FromResult(new CallToolResponse()
+            return Task.FromResult(new CallToolResult()
             {
-                Content = [new Content() { Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true }), Type = "text" }]
+                Content = [new TextContentBlock() { Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true }) }]
             });
         }
     }

@@ -4,7 +4,8 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using Grasshopper;
 using Grasshopper.Kernel;
-using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using RhinoMCPServer.Common;
 
@@ -31,38 +32,38 @@ namespace RhinoMCPTools.Grasshopper.Canvas
             }
             """);
 
-        public Task<CallToolResponse> ExecuteAsync(CallToolRequestParams request, IMcpServer? server)
+        public Task<CallToolResult> ExecuteAsync(CallToolRequestParams request, McpServer? server)
         {
             try
             {
                 // Validate parameters
                 if (request.Arguments is null)
                 {
-                    throw new McpServerException("Missing required arguments");
+                    throw new McpProtocolException("Missing required arguments");
                 }
 
                 if (!request.Arguments.TryGetValue("component_id", out var componentValue))
                 {
-                    throw new McpServerException("component_id parameter is required");
+                    throw new McpProtocolException("component_id parameter is required");
                 }
 
                 if (!Guid.TryParse(componentValue.ToString(), out var componentGuid))
                 {
-                    throw new McpServerException("Invalid GUID format");
+                    throw new McpProtocolException("Invalid GUID format");
                 }
 
                 // Get active Grasshopper document
                 GH_Document? doc = Instances.ActiveDocument;
                 if (doc == null)
                 {
-                    throw new McpServerException("No active Grasshopper document found");
+                    throw new McpProtocolException("No active Grasshopper document found");
                 }
 
                 // Find the component
                 var obj = doc.FindObject(componentGuid, false);
                 if (obj == null)
                 {
-                    throw new McpServerException($"Component with GUID {componentGuid} not found");
+                    throw new McpProtocolException($"Component with GUID {componentGuid} not found");
                 }
 
                 // Collect basic component information
@@ -130,21 +131,20 @@ namespace RhinoMCPTools.Grasshopper.Canvas
                     }
                 };
 
-                return Task.FromResult(new CallToolResponse()
+                return Task.FromResult(new CallToolResult()
                 {
-                    Content = [new Content()
+                    Content = [new TextContentBlock()
                     {
                         Text = JsonSerializer.Serialize(response, new JsonSerializerOptions
                         {
                             WriteIndented = true
                         }),
-                        Type = "text"
                     }]
                 });
             }
             catch (Exception ex)
             {
-                throw new McpServerException($"Error getting component information: {ex.Message}", ex);
+                throw new McpProtocolException($"Error getting component information: {ex.Message}", ex);
             }
         }
     }

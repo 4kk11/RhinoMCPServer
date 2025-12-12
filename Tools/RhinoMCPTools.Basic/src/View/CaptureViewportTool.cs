@@ -1,4 +1,5 @@
-using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using Rhino;
 using RhinoMCPServer.Common;
@@ -90,7 +91,7 @@ namespace RhinoMCPTools.Basic
             return result.ToString();
         }
 
-        public async Task<CallToolResponse> ExecuteAsync(CallToolRequestParams request, IMcpServer? server)
+        public async Task<CallToolResult> ExecuteAsync(CallToolRequestParams request, McpServer? server)
         {
             try
             {
@@ -140,7 +141,7 @@ namespace RhinoMCPTools.Basic
 
                 if (view == null)
                 {
-                    throw new McpServerException($"Viewport not found: {viewportName ?? "active"}");
+                    throw new McpProtocolException($"Viewport not found: {viewportName ?? "active"}");
                 }
 
                 // オブジェクトマッピングの初期化
@@ -189,7 +190,7 @@ namespace RhinoMCPTools.Basic
                 using var bitmap = view.CaptureToBitmap(size);
                 if (bitmap == null)
                 {
-                    throw new McpServerException("Failed to capture viewport");
+                    throw new McpProtocolException("Failed to capture viewport");
                 }
 
                 // bitmapをMemoryStreamに保存
@@ -226,18 +227,16 @@ namespace RhinoMCPTools.Basic
                     }
                 };
 
-                return new CallToolResponse()
+                return new CallToolResult()
                 {
-                    Content = 
+                    Content =
                     [
-                        new Content()
+                        new TextContentBlock()
                         {
-                            Type = "text",
                             Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true })
                         },
-                        new Content()
+                        new ImageContentBlock()
                         {
-                            Type = "image",
                             Data = base64Image,
                             MimeType = format == "jpg" ? "image/jpeg" : "image/png"
                         }
@@ -246,7 +245,7 @@ namespace RhinoMCPTools.Basic
             }
             catch (Exception ex)
             {
-                throw new McpServerException($"Error capturing viewport: {ex.Message}", ex);
+                throw new McpProtocolException($"Error capturing viewport: {ex.Message}", ex);
             }
         }
     }

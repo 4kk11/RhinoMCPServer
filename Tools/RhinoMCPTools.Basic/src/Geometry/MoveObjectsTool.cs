@@ -2,7 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using Rhino;
 using Rhino.Geometry;
@@ -52,23 +53,23 @@ namespace RhinoMCPTools.Basic
             }
             """);
 
-        public Task<CallToolResponse> ExecuteAsync(CallToolRequestParams request, IMcpServer? server)
+        public Task<CallToolResult> ExecuteAsync(CallToolRequestParams request, McpServer? server)
         {
             if (request.Arguments is null)
             {
-                throw new McpServerException("Missing required arguments");
+                throw new McpProtocolException("Missing required arguments");
             }
 
             if (!request.Arguments.TryGetValue("guids", out var guidsValue) ||
                 !request.Arguments.TryGetValue("vector", out var vectorValue))
             {
-                throw new McpServerException("Missing required arguments: 'guids' and 'vector' are required");
+                throw new McpProtocolException("Missing required arguments: 'guids' and 'vector' are required");
             }
 
             var jsonElement = (JsonElement)guidsValue;
             if (jsonElement.ValueKind != JsonValueKind.Array)
             {
-                throw new McpServerException("The 'guids' argument must be an array");
+                throw new McpProtocolException("The 'guids' argument must be an array");
             }
 
             var vectorElement = (JsonElement)vectorValue;
@@ -79,7 +80,7 @@ namespace RhinoMCPTools.Basic
             var moveVector = new Vector3d(vectorX, vectorY, vectorZ);
             if (moveVector.Length < double.Epsilon)
             {
-                throw new McpServerException("Movement vector length cannot be zero");
+                throw new McpProtocolException("Movement vector length cannot be zero");
             }
 
             var guidStrings = jsonElement.EnumerateArray()
@@ -89,7 +90,7 @@ namespace RhinoMCPTools.Basic
 
             if (!guidStrings.Any())
             {
-                throw new McpServerException("The guids array cannot be empty");
+                throw new McpProtocolException("The guids array cannot be empty");
             }
 
             var rhinoDoc = RhinoDoc.ActiveDoc;
@@ -156,9 +157,9 @@ namespace RhinoMCPTools.Basic
                 results = results
             };
 
-            return Task.FromResult(new CallToolResponse()
+            return Task.FromResult(new CallToolResult()
             {
-                Content = [new Content() { Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true }), Type = "text" }]
+                Content = [new TextContentBlock() { Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true }) }]
             });
         }
     }

@@ -4,7 +4,8 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using Grasshopper;
 using Grasshopper.Kernel;
-using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using RhinoMCPServer.Common;
 
@@ -34,7 +35,7 @@ namespace RhinoMCPTools.Grasshopper.Canvas
             ""required"": [""component_ids""]
         }");
 
-        public Task<CallToolResponse> ExecuteAsync(CallToolRequestParams request, IMcpServer? server)
+        public Task<CallToolResult> ExecuteAsync(CallToolRequestParams request, McpServer? server)
         {
             try
             {
@@ -42,15 +43,19 @@ namespace RhinoMCPTools.Grasshopper.Canvas
                 var doc = Instances.ActiveCanvas?.Document;
                 if (doc == null)
                 {
-                    throw new McpServerException("No active Grasshopper document found");
+                    throw new McpProtocolException("No active Grasshopper document found");
                 }
 
                 // コンポーネントIDの配列を取得
-                if (!request.Arguments.TryGetValue("component_ids", out var componentsValue) || 
-                    componentsValue is not JsonElement componentsArray || 
-                    componentsArray.ValueKind != JsonValueKind.Array)
+                if (request.Arguments == null || !request.Arguments.TryGetValue("component_ids", out var componentsValue))
                 {
-                    throw new McpServerException("components parameter must be an array of strings");
+                    throw new McpProtocolException("component_ids parameter is required");
+                }
+
+                var componentsArray = (JsonElement)componentsValue;
+                if (componentsArray.ValueKind != JsonValueKind.Array)
+                {
+                    throw new McpProtocolException("component_ids parameter must be an array of strings");
                 }
 
                 // 各コンポーネントのメッセージを取得
@@ -101,21 +106,20 @@ namespace RhinoMCPTools.Grasshopper.Canvas
                     results = messages
                 };
 
-                return Task.FromResult(new CallToolResponse()
+                return Task.FromResult(new CallToolResult()
                 {
-                    Content = [new Content()
+                    Content = [new TextContentBlock()
                     {
                         Text = JsonSerializer.Serialize(response, new JsonSerializerOptions
                         {
                             WriteIndented = true
                         }),
-                        Type = "text"
                     }]
                 });
             }
             catch (Exception ex)
             {
-                throw new McpServerException($"Error getting runtime messages: {ex.Message}", ex);
+                throw new McpProtocolException($"Error getting runtime messages: {ex.Message}", ex);
             }
         }
     }

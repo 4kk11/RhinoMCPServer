@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Text.Json;
-using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using RhinoMCPServer.Common;
 using RhinoMCPTools.Grasshopper.Analysis;
@@ -44,7 +45,7 @@ namespace RhinoMCPTools.Grasshopper.Canvas
             _analyzer = new GrasshopperComponentAnalyzer();
         }
 
-        public Task<CallToolResponse> ExecuteAsync(CallToolRequestParams request, IMcpServer? server)
+        public Task<CallToolResult> ExecuteAsync(CallToolRequestParams request, McpServer? server)
         {
             try
             {
@@ -83,21 +84,20 @@ namespace RhinoMCPTools.Grasshopper.Canvas
                     total_count = filteredComponents.Count
                 };
 
-                return Task.FromResult(new CallToolResponse()
+                return Task.FromResult(new CallToolResult()
                 {
-                    Content = [new Content()
+                    Content = [new TextContentBlock()
                     {
                         Text = JsonSerializer.Serialize(response, new JsonSerializerOptions
                         {
                             WriteIndented = true
                         }),
-                        Type = "text"
                     }]
                 });
             }
             catch (Exception ex)
             {
-                throw new McpServerException($"Error getting available components: {ex.Message}", ex);
+                throw new McpProtocolException($"Error getting available components: {ex.Message}", ex);
             }
         }
     }
