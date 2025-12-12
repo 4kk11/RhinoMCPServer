@@ -1,118 +1,144 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using ModelContextProtocol.Protocol;
-using ModelContextProtocol.Server;
-using Serilog;
 using System;
 using System.IO;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace RhinoMCPServer.Common
 {
+    /// <summary>
+    /// MCP Server entry point that uses AssemblyLoadContext to isolate
+    /// the MCP SDK and System.Text.Json 10.x from Rhino8's runtime.
+    /// </summary>
     public static class MCPServer
     {
-        private static WebApplication? _app;
+        private static McpLoadContext? _loadContext;
+        private static object? _runner;
+        private static MethodInfo? _stopMethod;
         private static ToolManager? _toolManager;
-        private static CancellationTokenSource? _cts;
 
-        private static void ConfigureLogging()
-        {
-            // Use serilog
-            string pluginPath = Path.GetDirectoryName(typeof(MCPServer).Assembly.Location)!;
-            string logDir = Path.Combine(pluginPath, "logs");
-            Directory.CreateDirectory(logDir); // logsディレクトリが存在しない場合は作成
-
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Verbose() // Capture all log levels
-                .WriteTo.File(Path.Combine(logDir, "MCPRhinoServer_.log"),
-                    rollingInterval: RollingInterval.Day,
-                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
-                .CreateLogger();
-        }
-
+        /// <summary>
+        /// Starts the MCP server on the specified port.
+        /// </summary>
+        /// <param name="port">HTTP port to listen on</param>
+        /// <param name="cancellationToken">Cancellation token</param>
         public static async Task RunAsync(int port = 3001, CancellationToken cancellationToken = default)
         {
-            Console.WriteLine("Starting server...");
+            Console.WriteLine("Starting MCP server with isolated AssemblyLoadContext...");
 
-            ConfigureLogging();
-
+            // Step 1: Create ToolManager (in default context)
             _toolManager = new ToolManager();
-            _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var toolExecutor = new ToolExecutorAdapter(_toolManager);
 
-            var builder = WebApplication.CreateBuilder();
+            // Step 2: Find the McpHost assembly path
+            string assemblyDir = Path.GetDirectoryName(typeof(MCPServer).Assembly.Location)!;
+            string mcpHostDir = Path.Combine(assemblyDir, "McpHost");
+            string mcpHostPath = Path.Combine(mcpHostDir, "RhinoMCPServer.McpHost.dll");
 
-            // Configure Serilog
-            builder.Logging.ClearProviders();
-            builder.Logging.AddSerilog();
+            Console.WriteLine($"McpHost assembly path: {mcpHostPath}");
 
-            // Configure MCP Server with HTTP transport
-            builder.Services.AddMcpServer(options =>
+            if (!File.Exists(mcpHostPath))
             {
-                options.ServerInfo = new Implementation() { Name = "MCPRhinoServer", Version = "1.0.0" };
-                options.Capabilities = new ServerCapabilities()
-                {
-                    Tools = new ToolsCapability(),
-                    Resources = new ResourcesCapability(),
-                    Prompts = new PromptsCapability(),
-                };
-                options.ProtocolVersion = "2024-11-05";
-                options.ServerInstructions = "This is a Model Context Protocol server for Rhino.";
-            })
-            .WithHttpTransport()
-            .WithListToolsHandler(ListToolsHandler)
-            .WithCallToolHandler(CallToolHandler);
-
-            Console.WriteLine("Server initialized.");
-
-            _app = builder.Build();
-            _app.MapMcp();
-
-            Console.WriteLine($"Server starting on http://localhost:{port}");
-
-            try
-            {
-                await _app.RunAsync($"http://localhost:{port}");
+                throw new FileNotFoundException(
+                    $"McpHost assembly not found at: {mcpHostPath}\n" +
+                    "Make sure the McpHost project is built and files are copied to the McpHost directory.");
             }
-            catch (OperationCanceledException)
-            {
-                Console.WriteLine("Server stopped.");
-            }
+
+            Console.WriteLine($"Loading McpHost from: {mcpHostPath}");
+
+            // Step 3: Create isolated load context
+            _loadContext = new McpLoadContext(mcpHostPath);
+
+            // Step 4: Load the McpHost assembly in isolated context
+            var mcpHostAssembly = _loadContext.LoadFromAssemblyPath(mcpHostPath);
+
+            // Step 5: Create a wrapper that implements IToolExecutor in the isolated context
+            var toolExecutorWrapper = CreateToolExecutorProxyType(mcpHostAssembly, toolExecutor);
+
+            // Step 6: Create McpHostRunner instance via reflection
+            var runnerType = mcpHostAssembly.GetType("RhinoMCPServer.McpHost.McpHostRunner")!;
+            _runner = Activator.CreateInstance(runnerType, toolExecutorWrapper);
+            _stopMethod = runnerType.GetMethod("StopAsync");
+
+            // Step 7: Get log directory
+            string logDir = Path.Combine(assemblyDir, "logs");
+
+            // Step 8: Call RunAsync on the runner
+            var runMethod = runnerType.GetMethod("RunAsync")!;
+            var runTask = (Task)runMethod.Invoke(_runner, new object[] { port, logDir, cancellationToken })!;
+
+            await runTask;
         }
 
+        /// <summary>
+        /// Creates a proxy object that implements IToolExecutor from the McpHost context
+        /// but delegates to our ToolExecutorAdapter.
+        /// </summary>
+        private static object CreateToolExecutorProxyType(Assembly mcpHostAssembly, ToolExecutorAdapter adapter)
+        {
+            // Since IToolExecutor is defined in McpHost (isolated context),
+            // we need to create a proxy class dynamically or use a different approach.
+            //
+            // The simplest approach is to create a wrapper class in McpHost that
+            // accepts delegate functions. But since we can't easily pass delegates
+            // across context boundaries, we'll use a different strategy:
+            //
+            // We'll create a ToolExecutorProxy class that wraps the adapter and
+            // is designed to work across the boundary.
+
+            // For now, create a simple wrapper using reflection
+            var proxyType = mcpHostAssembly.GetType("RhinoMCPServer.McpHost.ToolExecutorProxy");
+
+            if (proxyType != null)
+            {
+                // If ToolExecutorProxy exists, use it
+                return Activator.CreateInstance(proxyType, adapter)!;
+            }
+
+            // If proxy doesn't exist, we need to use a callback-based approach
+            // Create a DelegateToolExecutor that wraps our adapter
+            var delegateType = mcpHostAssembly.GetType("RhinoMCPServer.McpHost.DelegateToolExecutor");
+
+            if (delegateType != null)
+            {
+                Func<string> listToolsFunc = adapter.ListToolsJson;
+                Func<string, string, Task<string>> executeToolFunc = adapter.ExecuteToolJsonAsync;
+
+                return Activator.CreateInstance(delegateType, listToolsFunc, executeToolFunc)!;
+            }
+
+            throw new InvalidOperationException(
+                "Neither ToolExecutorProxy nor DelegateToolExecutor found in McpHost assembly. " +
+                "Make sure the McpHost project includes one of these types.");
+        }
+
+        /// <summary>
+        /// Stops the MCP server.
+        /// </summary>
         public static async Task StopAsync()
         {
-            if (_app != null)
+            if (_runner != null && _stopMethod != null)
             {
-                await _app.StopAsync();
-                await _app.DisposeAsync();
-                _app = null;
+                var stopTask = (Task?)_stopMethod.Invoke(_runner, Array.Empty<object>());
+                if (stopTask != null)
+                {
+                    await stopTask;
+                }
             }
 
-            if (_toolManager != null)
+            _toolManager?.Dispose();
+            _toolManager = null;
+
+            if (_loadContext != null)
             {
-                _toolManager.Dispose();
-                _toolManager = null;
+                _loadContext.Unload();
+                _loadContext = null;
             }
 
-            _cts?.Cancel();
-            _cts?.Dispose();
-            _cts = null;
-        }
+            _runner = null;
+            _stopMethod = null;
 
-        private static ValueTask<ListToolsResult> ListToolsHandler(
-            RequestContext<ListToolsRequestParams> context,
-            CancellationToken cancellationToken)
-        {
-            return _toolManager!.ListToolsAsync();
-        }
-
-        private static async ValueTask<CallToolResult> CallToolHandler(
-            RequestContext<CallToolRequestParams> context,
-            CancellationToken cancellationToken)
-        {
-            return await _toolManager!.ExecuteToolAsync(context.Params!, context.Server);
+            Console.WriteLine("MCP server stopped.");
         }
     }
 }

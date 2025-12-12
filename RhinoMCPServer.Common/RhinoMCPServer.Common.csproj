@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -9,11 +9,11 @@
 
   <ItemGroup>
     <PackageReference Include="ModelContextProtocol" Version="0.5.0-preview.1" />
-    <PackageReference Include="ModelContextProtocol.AspNetCore" Version="0.5.0-preview.1" />
     <PackageReference Include="RhinoCommon" Version="8.0.23304.9001" ExcludeAssets="runtime" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.3" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+    <PackageReference Include="System.Text.Json" Version="10.0.0" />
   </ItemGroup>
 
 </Project>
