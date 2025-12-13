@@ -377,13 +377,13 @@ public sealed class McpHostRunner
         CancellationToken cancellationToken)
     {
         var toolsJson = _toolExecutor.ListToolsJson();
-        var tools = JsonSerializer.Deserialize<List<ToolDefinition>>(toolsJson) ?? new List<ToolDefinition>();
+        var tools = JsonSerializer.Deserialize<List<ToolDefinition>>(toolsJson, McpJsonUtilities.DefaultOptions) ?? new List<ToolDefinition>();
 
         var mcpTools = tools.Select(t => new Tool
         {
             Name = t.Name,
             Description = t.Description,
-            InputSchema = JsonSerializer.Deserialize<JsonElement>(t.InputSchemaJson)
+            InputSchema = JsonSerializer.Deserialize<JsonElement>(t.InputSchemaJson, McpJsonUtilities.DefaultOptions)
         }).ToList();
 
         return ValueTask.FromResult(new ListToolsResult { Tools = mcpTools });

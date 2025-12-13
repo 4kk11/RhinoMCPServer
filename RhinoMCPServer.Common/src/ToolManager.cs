@@ -1,10 +1,8 @@
 using ModelContextProtocol;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace RhinoMCPServer.Common
@@ -29,17 +27,10 @@ namespace RhinoMCPServer.Common
             _pluginLoader.LoadPlugins();
         }
 
-        public ValueTask<ListToolsResult> ListToolsAsync()
-        {
-            var tools = _pluginLoader.LoadedTools.Values.Select(t => new Tool
-            {
-                Name = t.Name,
-                Description = t.Description,
-                InputSchema = t.InputSchema
-            }).ToList();
-
-            return ValueTask.FromResult(new ListToolsResult { Tools = tools });
-        }
+        /// <summary>
+        /// Gets the loaded tools collection.
+        /// </summary>
+        public IReadOnlyDictionary<string, IMCPTool> LoadedTools => _pluginLoader.LoadedTools;
 
         public Task<CallToolResult> ExecuteToolAsync(CallToolRequestParams request, McpServer? server)
         {

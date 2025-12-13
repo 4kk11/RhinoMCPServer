@@ -19,7 +19,7 @@ namespace RhinoMCPServer.Common
         /// Creates a new McpLoadContext for the specified assembly path.
         /// </summary>
         /// <param name="assemblyPath">Path to the main assembly to load (RhinoMCPServer.McpHost.dll)</param>
-        public McpLoadContext(string assemblyPath) : base(name: "McpHostContext", isCollectible: true)
+        public McpLoadContext(string assemblyPath) : base(name: "McpHostContext", isCollectible: false)
         {
             _resolver = new AssemblyDependencyResolver(assemblyPath);
             _basePath = Path.GetDirectoryName(assemblyPath)!;

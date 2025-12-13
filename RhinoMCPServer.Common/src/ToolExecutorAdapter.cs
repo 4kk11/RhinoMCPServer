@@ -35,10 +35,9 @@ namespace RhinoMCPServer.Common
         /// </summary>
         public string ListToolsJson()
         {
-            var toolsTask = _toolManager.ListToolsAsync();
-            var result = toolsTask.AsTask().GetAwaiter().GetResult();
-
-            var toolDefinitions = result.Tools.Select(t => new ToolDefinitionDto
+            // Access IMCPTool directly to avoid using ModelContextProtocol.Protocol.Tool
+            // which requires System.Text.Json 10.x
+            var toolDefinitions = _toolManager.LoadedTools.Values.Select(t => new ToolDefinitionDto
             {
                 Name = t.Name,
                 Description = t.Description ?? "",
