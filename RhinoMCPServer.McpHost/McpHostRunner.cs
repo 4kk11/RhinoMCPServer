@@ -1,75 +1,75 @@
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol;
 using ModelContextProtocol.Protocol;
-using ModelContextProtocol.Server;
-using RhinoMCPServer.McpHost.DTOs;
+using RhinoMCPServer.McpHost.Logging;
 using RhinoMCPServer.McpHost.Routing;
 using RhinoMCPServer.McpHost.Session;
 using Serilog;
-using System.Collections.Concurrent;
 using System.Net;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Channels;
 
 namespace RhinoMCPServer.McpHost;
 
 /// <summary>
 /// MCP Server host that runs in an isolated AssemblyLoadContext.
 /// Implements Streamable HTTP protocol.
+/// Orchestrates session management and request handling.
 /// </summary>
-public sealed class McpHostRunner
+public sealed class McpHostRunner : IAsyncDisposable
 {
     private readonly IToolExecutor _toolExecutor;
+    private readonly ISessionManager _sessionManager;
+    private readonly ILoggingConfiguration _loggingConfiguration;
     private HttpListener? _listener;
     private CancellationTokenSource? _cts;
-    private readonly ConcurrentDictionary<string, SessionInfo> _sessions = new();
     private ILoggerFactory? _loggerFactory;
 
     public McpHostRunner(IToolExecutor toolExecutor)
+        : this(toolExecutor, null, null)
     {
-        _toolExecutor = toolExecutor ?? throw new ArgumentNullException(nameof(toolExecutor));
     }
 
-    private void ConfigureLogging(string logDir)
+    internal McpHostRunner(
+        IToolExecutor toolExecutor,
+        ISessionManager? sessionManager = null,
+        ILoggingConfiguration? loggingConfiguration = null)
     {
-        Directory.CreateDirectory(logDir);
-
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Verbose()
-            .WriteTo.File(Path.Combine(logDir, "MCPRhinoServer_.log"),
-                rollingInterval: RollingInterval.Day,
-                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
-            .CreateLogger();
-
-        _loggerFactory = LoggerFactory.Create(builder =>
-        {
-            builder.AddSerilog();
-        });
+        _toolExecutor = toolExecutor ?? throw new ArgumentNullException(nameof(toolExecutor));
+        _sessionManager = sessionManager ?? new SessionManager();
+        _loggingConfiguration = loggingConfiguration ?? new LoggingConfiguration();
     }
 
     public async Task RunAsync(int port, string logDir, CancellationToken cancellationToken = default)
     {
-        Console.WriteLine("Starting Streamable HTTP MCP server (isolated context)...");
+        Log.Information("Starting Streamable HTTP MCP server (isolated context)...");
 
-        ConfigureLogging(logDir);
-
+        _loggerFactory = _loggingConfiguration.Configure(logDir);
         _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
         _listener = new HttpListener();
         _listener.Prefixes.Add($"http://localhost:{port}/");
         _listener.Start();
 
-        Console.WriteLine($"Server started on http://localhost:{port}");
-        Console.WriteLine("Streamable HTTP endpoint: POST /mcp");
+        Log.Information("Server started on http://localhost:{Port}", port);
+        Log.Information("Streamable HTTP endpoint: POST /mcp");
 
         try
         {
             while (!_cts.Token.IsCancellationRequested)
             {
                 var context = await _listener.GetContextAsync().ConfigureAwait(false);
-                _ = HandleRequestAsync(context, _cts.Token);
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await HandleRequestAsync(context, _cts.Token).ConfigureAwait(false);
+                    }
+                    catch (Exception ex) when (ex is not OperationCanceledException)
+                    {
+                        Log.Error(ex, "Unhandled exception in request handler");
+                    }
+                }, _cts.Token);
             }
         }
         catch (HttpListenerException) when (_cts.Token.IsCancellationRequested)
@@ -82,7 +82,7 @@ public sealed class McpHostRunner
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Server error: {ex.Message}");
+            Log.Error(ex, "Server error");
             throw;
         }
     }
@@ -96,14 +96,12 @@ public sealed class McpHostRunner
 
             Log.Information("Request: {Method} {Path}", method, path);
 
-            // Handle CORS preflight
             if (method == "OPTIONS")
             {
-                await HandleCorsPreflightAsync(context).ConfigureAwait(false);
+                HandleCorsPreflightAsync(context);
                 return;
             }
 
-            // Streamable HTTP endpoint
             if (path == "/mcp" || path == "/")
             {
                 switch (method)
@@ -137,11 +135,14 @@ public sealed class McpHostRunner
                 context.Response.StatusCode = 500;
                 context.Response.Close();
             }
-            catch { }
+            catch (Exception closeEx)
+            {
+                Log.Warning(closeEx, "Failed to send error response");
+            }
         }
     }
 
-    private Task HandleCorsPreflightAsync(HttpListenerContext context)
+    private static void HandleCorsPreflightAsync(HttpListenerContext context)
     {
         context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
         context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
@@ -149,7 +150,6 @@ public sealed class McpHostRunner
         context.Response.Headers.Add("Access-Control-Expose-Headers", "Mcp-Session-Id");
         context.Response.StatusCode = 204;
         context.Response.Close();
-        return Task.CompletedTask;
     }
 
     private async Task HandlePostRequestAsync(HttpListenerContext context, CancellationToken cancellationToken)
@@ -174,7 +174,7 @@ public sealed class McpHostRunner
 
         if (isInitializeRequest)
         {
-            sessionId = GenerateSessionId();
+            sessionId = _sessionManager.GenerateSessionId();
             await CreateAndRunSessionAsync(context, message, sessionId, cancellationToken).ConfigureAwait(false);
         }
         else if (string.IsNullOrEmpty(sessionId))
@@ -183,7 +183,7 @@ public sealed class McpHostRunner
             context.Response.StatusCode = 400;
             await WriteJsonResponseAsync(context, new { error = "Missing Mcp-Session-Id header" }).ConfigureAwait(false);
         }
-        else if (_sessions.TryGetValue(sessionId, out var session))
+        else if (_sessionManager.TryGetSession(sessionId, out var session) && session != null)
         {
             await HandleExistingSessionRequestAsync(context, message, session, cancellationToken).ConfigureAwait(false);
         }
@@ -197,11 +197,7 @@ public sealed class McpHostRunner
 
     private static bool IsInitializeRequest(JsonRpcMessage message)
     {
-        if (message is JsonRpcRequest request)
-        {
-            return request.Method == "initialize";
-        }
-        return false;
+        return message is JsonRpcRequest request && request.Method == "initialize";
     }
 
     private async Task CreateAndRunSessionAsync(
@@ -210,23 +206,15 @@ public sealed class McpHostRunner
         string sessionId,
         CancellationToken cancellationToken)
     {
-        Log.Information("Creating new session: {SessionId}", sessionId);
-
         SseResponseHelper.SetSseResponseHeaders(context, sessionId);
 
+        var session = _sessionManager.CreateSession(sessionId, _toolExecutor, _loggerFactory, cancellationToken);
         var responseStream = context.Response.OutputStream;
-        var transport = new StreamableHttpTransport(sessionId);
-        var serverOptions = CreateServerOptions();
-        var mcpServer = McpServer.Create(transport, serverOptions, _loggerFactory);
-        var sessionCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        var runTask = mcpServer.RunAsync(sessionCts.Token);
-
-        _sessions[sessionId] = new SessionInfo(transport, mcpServer, runTask, sessionCts);
 
         try
         {
-            await transport.OnMessageReceivedAsync(initialMessage, cancellationToken).ConfigureAwait(false);
-            await transport.WritePendingResponsesAsync(responseStream, cancellationToken).ConfigureAwait(false);
+            await session.Transport.OnMessageReceivedAsync(initialMessage, cancellationToken).ConfigureAwait(false);
+            await session.Transport.WritePendingResponsesAsync(responseStream, cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -242,7 +230,7 @@ public sealed class McpHostRunner
         }
     }
 
-    private async Task HandleExistingSessionRequestAsync(
+    private static async Task HandleExistingSessionRequestAsync(
         HttpListenerContext context,
         JsonRpcMessage message,
         SessionInfo session,
@@ -284,7 +272,7 @@ public sealed class McpHostRunner
             return;
         }
 
-        if (!_sessions.TryGetValue(sessionId, out var session))
+        if (!_sessionManager.TryGetSession(sessionId, out var session) || session == null)
         {
             context.Response.StatusCode = 404;
             await WriteJsonResponseAsync(context, new { error = "Session not found" }).ConfigureAwait(false);
@@ -320,12 +308,8 @@ public sealed class McpHostRunner
             return;
         }
 
-        if (_sessions.TryRemove(sessionId, out var session))
+        if (await _sessionManager.RemoveSessionAsync(sessionId).ConfigureAwait(false))
         {
-            Log.Information("Terminating session: {SessionId}", sessionId);
-            session.SessionCts.Cancel();
-            await session.Transport.DisposeAsync().ConfigureAwait(false);
-            await session.Server.DisposeAsync().ConfigureAwait(false);
             context.Response.StatusCode = 204;
         }
         else
@@ -338,93 +322,7 @@ public sealed class McpHostRunner
         context.Response.Close();
     }
 
-    private McpServerOptions CreateServerOptions()
-    {
-        return new McpServerOptions
-        {
-            ServerInfo = new Implementation { Name = "MCPRhinoServer", Version = "1.0.0" },
-            Capabilities = new ServerCapabilities
-            {
-                Tools = new ToolsCapability(),
-                Resources = new ResourcesCapability(),
-                Prompts = new PromptsCapability(),
-            },
-            ProtocolVersion = "2024-11-05",
-            ServerInstructions = "This is a Model Context Protocol server for Rhino.",
-            Handlers = new McpServerHandlers
-            {
-                ListToolsHandler = ListToolsHandler,
-                CallToolHandler = CallToolHandler,
-            },
-        };
-    }
-
-    private ValueTask<ListToolsResult> ListToolsHandler(
-        RequestContext<ListToolsRequestParams> context,
-        CancellationToken cancellationToken)
-    {
-        var toolsJson = _toolExecutor.ListToolsJson();
-        var tools = JsonSerializer.Deserialize<List<ToolDefinition>>(toolsJson, McpJsonUtilities.DefaultOptions) ?? new List<ToolDefinition>();
-
-        var mcpTools = tools.Select(t => new Tool
-        {
-            Name = t.Name,
-            Description = t.Description,
-            InputSchema = JsonSerializer.Deserialize<JsonElement>(t.InputSchemaJson, McpJsonUtilities.DefaultOptions)
-        }).ToList();
-
-        return ValueTask.FromResult(new ListToolsResult { Tools = mcpTools });
-    }
-
-    private async ValueTask<CallToolResult> CallToolHandler(
-        RequestContext<CallToolRequestParams> context,
-        CancellationToken cancellationToken)
-    {
-        var toolName = context.Params?.Name ?? throw new McpProtocolException("Missing tool name", McpErrorCode.InvalidParams);
-        var argumentsJson = context.Params?.Arguments != null
-            ? JsonSerializer.Serialize(context.Params.Arguments, McpJsonUtilities.DefaultOptions)
-            : "{}";
-
-        var resultJson = await _toolExecutor.ExecuteToolJsonAsync(toolName, argumentsJson);
-        var result = JsonSerializer.Deserialize<ToolExecutionResult>(resultJson);
-
-        if (result == null)
-        {
-            return new CallToolResult
-            {
-                IsError = true,
-                Content = new List<ContentBlock> { new TextContentBlock { Text = "Failed to parse tool result" } }
-            };
-        }
-
-        var contents = new List<ContentBlock>();
-        foreach (var content in result.Contents)
-        {
-            if (content.Type == "text")
-            {
-                contents.Add(new TextContentBlock { Text = content.Text ?? "" });
-            }
-            else if (content.Type == "image")
-            {
-                contents.Add(new ImageContentBlock { Data = content.Data ?? "", MimeType = content.MimeType ?? "image/png" });
-            }
-        }
-
-        return new CallToolResult
-        {
-            IsError = result.IsError,
-            Content = contents
-        };
-    }
-
-    private static string GenerateSessionId()
-    {
-        Span<byte> buffer = stackalloc byte[16];
-        RandomNumberGenerator.Fill(buffer);
-        return Convert.ToBase64String(buffer).Replace("+", "-").Replace("/", "_").TrimEnd('=');
-    }
-
-    private async Task WriteJsonResponseAsync(HttpListenerContext context, object response)
+    private static async Task WriteJsonResponseAsync(HttpListenerContext context, object response)
     {
         context.Response.ContentType = "application/json";
         var json = JsonSerializer.Serialize(response, McpJsonUtilities.DefaultOptions);
@@ -440,17 +338,17 @@ public sealed class McpHostRunner
         _listener?.Close();
         _listener = null;
 
-        foreach (var session in _sessions.Values)
-        {
-            session.SessionCts.Cancel();
-            await session.Transport.DisposeAsync().ConfigureAwait(false);
-            await session.Server.DisposeAsync().ConfigureAwait(false);
-        }
-        _sessions.Clear();
+        await _sessionManager.DisposeAsync().ConfigureAwait(false);
 
         _cts?.Dispose();
         _cts = null;
 
-        Console.WriteLine("Server stopped.");
+        Log.Information("Server stopped.");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await StopAsync().ConfigureAwait(false);
+        _loggerFactory?.Dispose();
     }
 }
