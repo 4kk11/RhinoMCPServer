@@ -9,8 +9,12 @@ using RhinoMCPServer.Common;
 
 namespace RhinoMCPServer.Plugin.Commands
 {
+    /// <summary>
+    /// Rhino command for starting and stopping the MCP server.
+    /// </summary>
     public class MCPServerCommand : Command
     {
+        private static McpServerHost? _serverHost;
         private static CancellationTokenSource? _cancellationTokenSource;
         private static Task? _serverTask;
 
@@ -28,7 +32,7 @@ namespace RhinoMCPServer.Plugin.Commands
             try
             {
                 // サーバーが既に起動している場合は停止
-                if (_serverTask != null && !_serverTask.IsCompleted)
+                if (_serverHost != null && _serverHost.IsRunning)
                 {
                     string answer = "";
                     var result = RhinoGet.GetString("Server is running. Do you want to stop it? (Yes/No)", false, ref answer);
@@ -73,8 +77,9 @@ namespace RhinoMCPServer.Plugin.Commands
 
         private void StartServer(int port = 3001)
         {
+            _serverHost = new McpServerHost();
             _cancellationTokenSource = new CancellationTokenSource();
-            _serverTask = MCPServer.RunAsync(port, _cancellationTokenSource.Token);
+            _serverTask = _serverHost.RunAsync(port, _cancellationTokenSource.Token);
         }
 
         private void StopServer()
@@ -97,6 +102,12 @@ namespace RhinoMCPServer.Plugin.Commands
                     RhinoApp.WriteLine($"Error stopping server: {ex.Message}");
                 }
                 _serverTask = null;
+            }
+
+            if (_serverHost != null)
+            {
+                _serverHost.DisposeAsync().AsTask().Wait(TimeSpan.FromSeconds(5));
+                _serverHost = null;
             }
         }
     }
