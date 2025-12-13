@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 using RhinoMCPServer.McpHost.Mcp;
+using RhinoMCPServer.McpHost.Transport;
 using Serilog;
 using System.Collections.Concurrent;
 using System.Security.Cryptography;

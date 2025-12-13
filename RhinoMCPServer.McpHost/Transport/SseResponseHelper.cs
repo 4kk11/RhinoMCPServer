@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace RhinoMCPServer.McpHost.Routing;
+namespace RhinoMCPServer.McpHost.Transport;
 
 /// <summary>
 /// Helper class for setting SSE (Server-Sent Events) response headers.

@@ -1,4 +1,5 @@
 using ModelContextProtocol.Server;
+using RhinoMCPServer.McpHost.Transport;
 
 namespace RhinoMCPServer.McpHost.Session;
 

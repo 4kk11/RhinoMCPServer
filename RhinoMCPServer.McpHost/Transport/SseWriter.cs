@@ -5,7 +5,7 @@ using System.Net.ServerSentEvents;
 using System.Text.Json;
 using System.Threading.Channels;
 
-namespace RhinoMCPServer.McpHost;
+namespace RhinoMCPServer.McpHost.Transport;
 
 /// <summary>
 /// SSE writer for sending JSON-RPC messages as Server-Sent Events.

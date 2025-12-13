@@ -2,7 +2,7 @@ using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using System.Threading.Channels;
 
-namespace RhinoMCPServer.McpHost;
+namespace RhinoMCPServer.McpHost.Transport;
 
 /// <summary>
 /// Custom ITransport implementation for Streamable HTTP communication.
