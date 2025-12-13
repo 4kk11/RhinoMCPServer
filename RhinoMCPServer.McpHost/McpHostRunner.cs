@@ -2,6 +2,8 @@ using Microsoft.Extensions.Logging;
 using ModelContextProtocol;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
+using RhinoMCPServer.McpHost.DTOs;
+using RhinoMCPServer.McpHost.Routing;
 using Serilog;
 using System.Collections.Concurrent;
 using System.Net;
@@ -215,7 +217,7 @@ public sealed class McpHostRunner
     {
         Log.Information("Creating new session: {SessionId}", sessionId);
 
-        SetSseResponseHeaders(context, sessionId);
+        SseResponseHelper.SetSseResponseHeaders(context, sessionId);
 
         var responseStream = context.Response.OutputStream;
         var transport = new StreamableHttpTransport(sessionId);
@@ -253,7 +255,7 @@ public sealed class McpHostRunner
     {
         Log.Debug("Handling request for existing session: {SessionId}", session.Transport.SessionId);
 
-        SetSseResponseHeaders(context, session.Transport.SessionId!);
+        SseResponseHelper.SetSseResponseHeaders(context, session.Transport.SessionId!);
 
         var responseStream = context.Response.OutputStream;
 
@@ -296,7 +298,7 @@ public sealed class McpHostRunner
 
         Log.Information("GET request for notifications, session: {SessionId}", sessionId);
 
-        SetSseResponseHeaders(context, sessionId);
+        SseResponseHelper.SetSseResponseHeaders(context, sessionId);
 
         try
         {
@@ -339,16 +341,6 @@ public sealed class McpHostRunner
         }
 
         context.Response.Close();
-    }
-
-    private static void SetSseResponseHeaders(HttpListenerContext context, string sessionId)
-    {
-        context.Response.ContentType = "text/event-stream";
-        context.Response.Headers.Add("Cache-Control", "no-cache, no-store");
-        context.Response.Headers.Add("Connection", "keep-alive");
-        context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
-        context.Response.Headers.Add("Access-Control-Expose-Headers", "Mcp-Session-Id");
-        context.Response.Headers.Add("Mcp-Session-Id", sessionId);
     }
 
     private McpServerOptions CreateServerOptions()
@@ -466,34 +458,4 @@ public sealed class McpHostRunner
 
         Console.WriteLine("Server stopped.");
     }
-}
-
-/// <summary>
-/// DTO for tool definition (used for JSON serialization across context boundary)
-/// </summary>
-public class ToolDefinition
-{
-    public string Name { get; set; } = "";
-    public string Description { get; set; } = "";
-    public string InputSchemaJson { get; set; } = "{}";
-}
-
-/// <summary>
-/// DTO for tool execution result (used for JSON serialization across context boundary)
-/// </summary>
-public class ToolExecutionResult
-{
-    public bool IsError { get; set; }
-    public List<ContentItem> Contents { get; set; } = new();
-}
-
-/// <summary>
-/// DTO for content item
-/// </summary>
-public class ContentItem
-{
-    public string Type { get; set; } = "text";
-    public string? Text { get; set; }
-    public string? Data { get; set; }
-    public string? MimeType { get; set; }
 }
