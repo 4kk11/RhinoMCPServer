@@ -4,6 +4,7 @@ using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using RhinoMCPServer.McpHost.DTOs;
 using RhinoMCPServer.McpHost.Routing;
+using RhinoMCPServer.McpHost.Session;
 using Serilog;
 using System.Collections.Concurrent;
 using System.Net;
@@ -25,12 +26,6 @@ public sealed class McpHostRunner
     private CancellationTokenSource? _cts;
     private readonly ConcurrentDictionary<string, SessionInfo> _sessions = new();
     private ILoggerFactory? _loggerFactory;
-
-    private record SessionInfo(
-        StreamableHttpTransport Transport,
-        McpServer Server,
-        Task RunTask,
-        CancellationTokenSource SessionCts);
 
     public McpHostRunner(IToolExecutor toolExecutor)
     {
