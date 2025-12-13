@@ -4,7 +4,7 @@ RhinocerosでModel Context Protocol (MCP)サーバーを実行するためのプ
 
 ## 概要
 
-このプラグインは、公式の[Model Context Protocol C# SDK](https://github.com/modelcontextprotocol/csharp-sdk)を使用してRhinoの機能をMCPクライアントに公開します。WebSocket通信ではなく、Server-Sent Events (SSE)を採用することで、より効率的で軽量な双方向通信を実現しています。
+このプラグインは、公式の[Model Context Protocol C# SDK](https://github.com/modelcontextprotocol/csharp-sdk)を使用してRhinoの機能をMCPクライアントに公開します。Streamable HTTPプロトコルを採用し、AssemblyLoadContextによる分離実行環境でMCP SDKを動作させることで、Rhinoとの安定した連携を実現しています。
 
 ## プロジェクト構成
 
@@ -12,6 +12,7 @@ RhinocerosでModel Context Protocol (MCP)サーバーを実行するためのプ
 
 - `RhinoMCPServer.Common`: MCPツールの共通基盤（インターフェース、ツール管理など）
 - `RhinoMCPServer.Plugin`: Rhinoプラグインの本体
+- `RhinoMCPServer.McpHost`: MCP SDK分離実行環境（AssemblyLoadContext内で動作）
 - `RhinoMCPTools.Basic`: 基本的なジオメトリ操作ツール群
 - `RhinoMCPTools.Misc`: ユーティリティツール群
 - `RhinoMCPTools.Grasshopper`: Grasshopperコンポーネントの操作・制御を行うツール群
@@ -31,6 +32,10 @@ graph TB
           B[RhinoMCPServer.Common<br>MCPツールの基盤]
       end
 
+      subgraph "分離実行環境(AssemblyLoadContext)"
+          F[RhinoMCPServer.McpHost<br>MCP SDK実行環境]
+      end
+
       subgraph "MCPツール(動的に拡張可能)"
           C[RhinoMCPTools.Basic<br>基本ジオメトリツール]
           D[RhinoMCPTools.Misc<br>ユーティリティツール]
@@ -39,18 +44,21 @@ graph TB
     end
 
     A --> B
+    A --> F
     C --> B
     D --> B
     E --> B
-    X -->|"SSE接続"| A
+    X -->|"Streamable HTTP"| F
 
     classDef plugin fill:#949,stroke:#333,stroke-width:2px;
     classDef common fill:#595,stroke:#333,stroke-width:2px;
     classDef tools fill:#559,stroke:#333,stroke-width:2px;
+    classDef host fill:#959,stroke:#333,stroke-width:2px;
 
     class A plugin;
     class B common;
     class C,D,E tools;
+    class F host;
 ```
 
 ## プラグイン拡張性
@@ -91,7 +99,9 @@ https://github.com/user-attachments/assets/114e1331-c6fe-45f9-b28c-c88799c0643c
 
 ### MCPクライアントとの接続
 
-現在、Claude DesktopのMCPクライアントはSSE接続に直接対応していないため、[標準入出力をSSEにブリッジするmcpサーバー](https://github.com/boilingdata/mcp-server-and-gw)を使用する必要があります。
+サーバーはStreamable HTTPプロトコルで動作します。Claude DesktopなどのMCPクライアントと接続する場合は、[標準入出力をHTTPにブリッジするmcpサーバー](https://github.com/boilingdata/mcp-server-and-gw)を使用してください。
+
+エンドポイント: `POST http://localhost:{port}/mcp`
 
 ## 提供されるMCPツール
 
@@ -306,6 +316,20 @@ https://github.com/user-attachments/assets/114e1331-c6fe-45f9-b28c-c88799c0643c
     - `show_object_labels` (boolean, optional, default: true) - オブジェクトにシンプルなシンボルラベル（A, B, C..., AA, AB...）を表示するかどうか
     - `font_height` (number, optional, default: 20.0) - ラベルのフォントサイズ
 
+- **raycast_from_screen**
+  - 機能：スクリーン座標からレイキャストを実行し、ヒットしたオブジェクトの情報を取得
+  - パラメータ：
+    - `x` (number, required) - 正規化されたX座標（0.0〜1.0）
+    - `y` (number, required) - 正規化されたY座標（0.0〜1.0）
+    - `viewportName` (string, optional) - 使用するビューポートの名前（未指定の場合はアクティブビューポート）
+  - 戻り値：
+    - `hit` (boolean) - オブジェクトにヒットしたかどうか
+    - `object_info` (object, ヒット時のみ) - ヒットしたオブジェクトの情報
+      - `guid` (string) - オブジェクトのGUID
+      - `type` (string) - ジオメトリの種類
+      - `hit_point` (object) - ヒット点の座標（x, y, z）
+      - `layer` (number) - レイヤーインデックス
+
 ### RhinoMCPTools.Misc
 ユーティリティ機能を提供するツール群です。
 
@@ -370,6 +394,36 @@ Grasshopper関連の機能を提供するツール群です。
   - 機能：指定されたコンポーネントをキャンバスから削除
   - パラメータ：
     - `component_id` (string, required) - 削除するコンポーネントのGUID
+
+- **get_component_info**
+  - 機能：指定されたGrasshopperコンポーネントの詳細情報を取得（パラメータと接続状態を含む）
+  - パラメータ：
+    - `component_id` (string, required) - 情報を取得するコンポーネントのGUID
+  - 戻り値：
+    - `info` (object) - コンポーネントの基本情報
+      - `guid` (string) - コンポーネントのGUID
+      - `name` (string) - コンポーネント名
+      - `nickname` (string) - ニックネーム
+      - `description` (string) - 説明
+      - `category` (string) - カテゴリ
+      - `subcategory` (string) - サブカテゴリ
+      - `position` (object) - キャンバス上の位置（x, y）
+    - `parameters` (object) - パラメータ情報
+      - `input` (array) - 入力パラメータと接続情報
+      - `output` (array) - 出力パラメータと接続情報
+
+- **get_runtime_messages**
+  - 機能：指定されたGrasshopperコンポーネントのランタイムメッセージを取得
+  - パラメータ：
+    - `component_ids` (array of string, required) - メッセージを取得するコンポーネントのGUID配列
+  - 戻り値：
+    - `results` (array) - 各コンポーネントのメッセージ情報
+      - `id` (string) - コンポーネントのGUID
+      - `name` (string) - コンポーネント名
+      - `nickname` (string) - ニックネーム
+      - `messages` (array) - ランタイムメッセージの配列
+        - `level` (string) - メッセージレベル（"error", "warning", "remark"）
+        - `message` (string) - メッセージ内容
 
 #### ワイヤー接続 (Wires)
 
