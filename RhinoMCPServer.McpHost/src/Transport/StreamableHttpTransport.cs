@@ -1,5 +1,6 @@
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
+using System.Collections.Concurrent;
 using System.Threading.Channels;
 
 namespace RhinoMCPServer.McpHost.Transport;
@@ -7,12 +8,13 @@ namespace RhinoMCPServer.McpHost.Transport;
 /// <summary>
 /// Custom ITransport implementation for Streamable HTTP communication.
 /// Each POST request gets responses via SSE stream in the response body.
+/// Supports concurrent request handling by matching responses to request IDs.
 /// </summary>
 internal sealed class StreamableHttpTransport : ITransport
 {
     private readonly Channel<JsonRpcMessage> _incomingChannel;
-    private readonly Channel<JsonRpcMessage> _outgoingChannel;
     private readonly Channel<JsonRpcMessage> _notificationChannel;
+    private readonly ConcurrentDictionary<RequestId, TaskCompletionSource<JsonRpcMessage>> _pendingRequests = new();
     private bool _isDisposed;
 
     public string? SessionId { get; }
@@ -25,11 +27,6 @@ internal sealed class StreamableHttpTransport : ITransport
         {
             SingleReader = true,
             SingleWriter = false,
-        });
-        _outgoingChannel = Channel.CreateBounded<JsonRpcMessage>(new BoundedChannelOptions(16)
-        {
-            SingleReader = true,
-            SingleWriter = true,
         });
         _notificationChannel = Channel.CreateUnbounded<JsonRpcMessage>(new UnboundedChannelOptions
         {
@@ -53,6 +50,7 @@ internal sealed class StreamableHttpTransport : ITransport
 
     /// <summary>
     /// Called by McpServer to send a message back to the client.
+    /// Routes responses to matching pending requests, notifications to notification channel.
     /// </summary>
     public async Task SendMessageAsync(JsonRpcMessage message, CancellationToken cancellationToken = default)
     {
@@ -61,38 +59,76 @@ internal sealed class StreamableHttpTransport : ITransport
             return;
         }
 
-        // Route notifications to notification channel, responses to outgoing channel
+        // Route notifications to notification channel
         if (message is JsonRpcNotification)
         {
             await _notificationChannel.Writer.WriteAsync(message, cancellationToken).ConfigureAwait(false);
+            return;
         }
-        else
+
+        // Route responses to matching pending request
+        if (message is JsonRpcResponse response)
         {
-            await _outgoingChannel.Writer.WriteAsync(message, cancellationToken).ConfigureAwait(false);
+            if (_pendingRequests.TryRemove(response.Id, out var tcs))
+            {
+                tcs.TrySetResult(message);
+            }
+        }
+        else if (message is JsonRpcError error)
+        {
+            if (_pendingRequests.TryRemove(error.Id, out var tcs))
+            {
+                tcs.TrySetResult(message);
+            }
         }
     }
 
     /// <summary>
-    /// Writes pending responses to the HTTP response stream as SSE.
-    /// Called after processing a POST request.
+    /// Gets the pending response for a specific request ID.
+    /// Used for JSON format responses in Streamable HTTP.
+    /// Supports concurrent requests by matching responses to request IDs.
     /// </summary>
-    public async Task WritePendingResponsesAsync(Stream outputStream, CancellationToken cancellationToken)
+    public async Task<JsonRpcMessage?> GetPendingResponseAsync(RequestId requestId, CancellationToken cancellationToken)
+    {
+        var tcs = new TaskCompletionSource<JsonRpcMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _pendingRequests[requestId] = tcs;
+
+        try
+        {
+            using var registration = cancellationToken.Register(() =>
+            {
+                if (_pendingRequests.TryRemove(requestId, out var removed))
+                {
+                    removed.TrySetCanceled(cancellationToken);
+                }
+            });
+
+            return await tcs.Task.ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            _pendingRequests.TryRemove(requestId, out _);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Writes pending response to the HTTP response stream as SSE.
+    /// Called after processing a POST request when SSE format is needed.
+    /// </summary>
+    public async Task WritePendingResponsesAsync(Stream outputStream, RequestId requestId, CancellationToken cancellationToken)
     {
         await using var sseWriter = new SseWriter();
 
         // Start writing SSE in background
         var writeTask = sseWriter.WriteAllAsync(outputStream, cancellationToken);
 
-        // Wait for response(s) and send them
         try
         {
-            // Read one response for the request
-            if (await _outgoingChannel.Reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
+            var response = await GetPendingResponseAsync(requestId, cancellationToken).ConfigureAwait(false);
+            if (response != null)
             {
-                if (_outgoingChannel.Reader.TryRead(out var response))
-                {
-                    await sseWriter.SendMessageAsync(response, cancellationToken).ConfigureAwait(false);
-                }
+                await sseWriter.SendMessageAsync(response, cancellationToken).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException)
@@ -129,8 +165,17 @@ internal sealed class StreamableHttpTransport : ITransport
     {
         _isDisposed = true;
         _incomingChannel.Writer.TryComplete();
-        _outgoingChannel.Writer.TryComplete();
         _notificationChannel.Writer.TryComplete();
+
+        // Cancel all pending requests
+        foreach (var kvp in _pendingRequests)
+        {
+            if (_pendingRequests.TryRemove(kvp.Key, out var tcs))
+            {
+                tcs.TrySetCanceled();
+            }
+        }
+
         return ValueTask.CompletedTask;
     }
 }

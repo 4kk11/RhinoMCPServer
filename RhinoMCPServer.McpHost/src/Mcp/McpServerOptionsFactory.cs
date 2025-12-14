@@ -11,7 +11,7 @@ public static class McpServerOptionsFactory
 {
     private const string ServerName = "MCPRhinoServer";
     private const string ServerVersion = "1.0.0";
-    private const string ProtocolVersion = "2024-11-05";
+    private const string ProtocolVersion = "2025-03-26";
     private const string ServerInstructions = "This is a Model Context Protocol server for Rhino.";
 
     /// <summary>

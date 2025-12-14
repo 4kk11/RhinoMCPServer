@@ -206,15 +206,34 @@ public sealed class McpHostRunner : IAsyncDisposable
         string sessionId,
         CancellationToken cancellationToken)
     {
-        SseResponseHelper.SetSseResponseHeaders(context, sessionId);
-
         var session = _sessionManager.CreateSession(sessionId, _toolExecutor, _loggerFactory, cancellationToken);
-        var responseStream = context.Response.OutputStream;
 
         try
         {
+            // Initialize request must be a JsonRpcRequest with an ID
+            if (initialMessage is not JsonRpcRequest request)
+            {
+                Log.Warning("Initialize message is not a request");
+                context.Response.StatusCode = 400;
+                await WriteJsonResponseAsync(context, new { error = "Initialize must be a request" }).ConfigureAwait(false);
+                return;
+            }
+
             await session.Transport.OnMessageReceivedAsync(initialMessage, cancellationToken).ConfigureAwait(false);
-            await session.Transport.WritePendingResponsesAsync(responseStream, cancellationToken).ConfigureAwait(false);
+            var response = await session.Transport.GetPendingResponseAsync(request.Id, cancellationToken).ConfigureAwait(false);
+
+            if (response != null)
+            {
+                SetJsonResponseHeaders(context, sessionId);
+                await WriteJsonRpcResponseAsync(context, response).ConfigureAwait(false);
+            }
+            else
+            {
+                // No response - return 202 Accepted
+                context.Response.StatusCode = 202;
+                context.Response.Headers.Add("Mcp-Session-Id", sessionId);
+                context.Response.Close();
+            }
         }
         catch (OperationCanceledException)
         {
@@ -223,10 +242,6 @@ public sealed class McpHostRunner : IAsyncDisposable
         catch (Exception ex)
         {
             Log.Error(ex, "Session {SessionId} error during initial request", sessionId);
-        }
-        finally
-        {
-            context.Response.Close();
         }
     }
 
@@ -238,14 +253,44 @@ public sealed class McpHostRunner : IAsyncDisposable
     {
         Log.Debug("Handling request for existing session: {SessionId}", session.Transport.SessionId);
 
-        SseResponseHelper.SetSseResponseHeaders(context, session.Transport.SessionId!);
-
-        var responseStream = context.Response.OutputStream;
-
         try
         {
-            await session.Transport.OnMessageReceivedAsync(message, cancellationToken).ConfigureAwait(false);
-            await session.Transport.WritePendingResponsesAsync(responseStream, cancellationToken).ConfigureAwait(false);
+            // Notifications don't have responses - return 202 immediately
+            if (message is JsonRpcNotification)
+            {
+                await session.Transport.OnMessageReceivedAsync(message, cancellationToken).ConfigureAwait(false);
+                context.Response.StatusCode = 202;
+                context.Response.Headers.Add("Mcp-Session-Id", session.Transport.SessionId!);
+                context.Response.Close();
+                return;
+            }
+
+            // Requests need response matching by ID
+            if (message is JsonRpcRequest request)
+            {
+                await session.Transport.OnMessageReceivedAsync(message, cancellationToken).ConfigureAwait(false);
+                var response = await session.Transport.GetPendingResponseAsync(request.Id, cancellationToken).ConfigureAwait(false);
+
+                if (response != null)
+                {
+                    SetJsonResponseHeaders(context, session.Transport.SessionId!);
+                    await WriteJsonRpcResponseAsync(context, response).ConfigureAwait(false);
+                }
+                else
+                {
+                    // No response - return 202 Accepted
+                    context.Response.StatusCode = 202;
+                    context.Response.Headers.Add("Mcp-Session-Id", session.Transport.SessionId!);
+                    context.Response.Close();
+                }
+            }
+            else
+            {
+                // Unknown message type
+                Log.Warning("Unknown message type received");
+                context.Response.StatusCode = 400;
+                context.Response.Close();
+            }
         }
         catch (OperationCanceledException)
         {
@@ -254,10 +299,6 @@ public sealed class McpHostRunner : IAsyncDisposable
         catch (Exception ex)
         {
             Log.Error(ex, "Error handling request for session {SessionId}", session.Transport.SessionId);
-        }
-        finally
-        {
-            context.Response.Close();
         }
     }
 
@@ -325,6 +366,22 @@ public sealed class McpHostRunner : IAsyncDisposable
     private static async Task WriteJsonResponseAsync(HttpListenerContext context, object response)
     {
         context.Response.ContentType = "application/json";
+        var json = JsonSerializer.Serialize(response, McpJsonUtilities.DefaultOptions);
+        var bytes = Encoding.UTF8.GetBytes(json);
+        await context.Response.OutputStream.WriteAsync(bytes).ConfigureAwait(false);
+        context.Response.Close();
+    }
+
+    private static void SetJsonResponseHeaders(HttpListenerContext context, string sessionId)
+    {
+        context.Response.ContentType = "application/json";
+        context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+        context.Response.Headers.Add("Access-Control-Expose-Headers", "Mcp-Session-Id");
+        context.Response.Headers.Add("Mcp-Session-Id", sessionId);
+    }
+
+    private static async Task WriteJsonRpcResponseAsync(HttpListenerContext context, JsonRpcMessage response)
+    {
         var json = JsonSerializer.Serialize(response, McpJsonUtilities.DefaultOptions);
         var bytes = Encoding.UTF8.GetBytes(json);
         await context.Response.OutputStream.WriteAsync(bytes).ConfigureAwait(false);
