@@ -54,7 +54,10 @@ public class McpToolHandler
             : "{}";
 
         var resultJson = await _toolExecutor.ExecuteToolJsonAsync(toolName, argumentsJson);
-        var result = JsonSerializer.Deserialize<ToolExecutionResult>(resultJson);
+        var result = JsonSerializer.Deserialize<ToolExecutionResult>(resultJson, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
 
         if (result == null)
         {
