@@ -16,8 +16,7 @@ public static class SseResponseHelper
     public static void SetSseResponseHeaders(HttpListenerContext context, string sessionId)
     {
         context.Response.ContentType = "text/event-stream";
-        context.Response.Headers.Add("Cache-Control", "no-cache,no-store");
-        context.Response.Headers.Add("Content-Encoding", "identity");
+        context.Response.Headers.Add("Cache-Control", "no-cache, no-store");
         context.Response.Headers.Add("Connection", "keep-alive");
         context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
         context.Response.Headers.Add("Access-Control-Expose-Headers", "Mcp-Session-Id");

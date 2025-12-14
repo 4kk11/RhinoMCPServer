@@ -7,7 +7,8 @@ namespace RhinoMCPServer.McpHost.Transport;
 
 /// <summary>
 /// Custom ITransport implementation for Streamable HTTP communication.
-/// Each POST request gets responses via SSE stream in the response body.
+/// Each POST request gets JSON response directly.
+/// GET requests receive server-initiated notifications via SSE.
 /// Supports concurrent request handling by matching responses to request IDs.
 /// </summary>
 internal sealed class StreamableHttpTransport : ITransport
@@ -109,31 +110,6 @@ internal sealed class StreamableHttpTransport : ITransport
         {
             _pendingRequests.TryRemove(requestId, out _);
             return null;
-        }
-    }
-
-    /// <summary>
-    /// Writes pending response to the HTTP response stream as SSE.
-    /// Called after processing a POST request when SSE format is needed.
-    /// </summary>
-    public async Task WritePendingResponsesAsync(Stream outputStream, RequestId requestId, CancellationToken cancellationToken)
-    {
-        await using var sseWriter = new SseWriter();
-
-        // Start writing SSE in background
-        var writeTask = sseWriter.WriteAllAsync(outputStream, cancellationToken);
-
-        try
-        {
-            var response = await GetPendingResponseAsync(requestId, cancellationToken).ConfigureAwait(false);
-            if (response != null)
-            {
-                await sseWriter.SendMessageAsync(response, cancellationToken).ConfigureAwait(false);
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            // Request cancelled
         }
     }
 
