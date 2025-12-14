@@ -4,7 +4,7 @@ A plugin for executing Model Context Protocol (MCP) server in Rhinoceros. It pro
 
 ## Overview
 
-This plugin exposes Rhino's functionality to MCP clients using the official [Model Context Protocol C# SDK](https://github.com/modelcontextprotocol/csharp-sdk). Instead of WebSocket communication, it adopts Server-Sent Events (SSE) to achieve more efficient and lightweight bidirectional communication.
+This plugin exposes Rhino's functionality to MCP clients using the official [Model Context Protocol C# SDK](https://github.com/modelcontextprotocol/csharp-sdk). It adopts the Streamable HTTP protocol and runs the MCP SDK in an isolated execution environment using AssemblyLoadContext, ensuring stable integration with Rhino.
 
 ## Project Structure
 
@@ -12,6 +12,7 @@ The project consists of the following libraries:
 
 - `RhinoMCPServer.Common`: Common foundation for MCP tools (interfaces, tool management, etc.)
 - `RhinoMCPServer.Plugin`: Main Rhino plugin implementation
+- `RhinoMCPServer.McpHost`: MCP SDK isolated execution environment (runs within AssemblyLoadContext)
 - `RhinoMCPTools.Basic`: Basic geometry operation tools
 - `RhinoMCPTools.Misc`: Utility tools
 - `RhinoMCPTools.Grasshopper`: Grasshopper integration tools
@@ -31,6 +32,10 @@ graph TB
           B[RhinoMCPServer.Common<br>MCP Tool Foundation]
       end
 
+      subgraph "Isolated Execution Environment (AssemblyLoadContext)"
+          F[RhinoMCPServer.McpHost<br>MCP SDK Runtime]
+      end
+
       subgraph "MCP Tools (Dynamically Extensible)"
           C[RhinoMCPTools.Basic<br>Basic Geometry Tools]
           D[RhinoMCPTools.Misc<br>Utility Tools]
@@ -39,18 +44,21 @@ graph TB
     end
 
     A --> B
+    A --> F
     C --> B
     D --> B
     E --> B
-    X -->|"SSE connection"| A
+    X -->|"Streamable HTTP"| F
 
     classDef plugin fill:#949,stroke:#333,stroke-width:2px;
     classDef common fill:#595,stroke:#333,stroke-width:2px;
     classDef tools fill:#559,stroke:#333,stroke-width:2px;
+    classDef host fill:#959,stroke:#333,stroke-width:2px;
 
     class A plugin;
     class B common;
     class C,D,E tools;
+    class F host;
 ```
 
 ## Plugin Extensibility
@@ -91,7 +99,9 @@ https://github.com/user-attachments/assets/114e1331-c6fe-45f9-b28c-c88799c0643c
 
 ### Connecting with MCP Clients
 
-Currently, Claude Desktop's MCP client does not directly support SSE connections, so you need to use the [MCP server that bridges standard I/O to SSE](https://github.com/boilingdata/mcp-server-and-gw).
+The server operates using the Streamable HTTP protocol. To connect with MCP clients such as Claude Desktop, use the [MCP server that bridges standard I/O to HTTP](https://github.com/boilingdata/mcp-server-and-gw).
+
+Endpoint: `POST http://localhost:{port}/mcp`
 
 ## Provided MCP Tools
 
@@ -306,6 +316,20 @@ Basic geometry operation and drafting tools.
     - `show_object_labels` (boolean, optional, default: true) - Whether to display simple symbol labels (A, B, C..., AA, AB...) for objects in the viewport
     - `font_height` (number, optional, default: 20.0) - Font size for the labels
 
+- **raycast_from_screen**
+  - Function: Performs a raycast from screen coordinates and returns information about the hit object
+  - Parameters:
+    - `x` (number, required) - Normalized X coordinate (0.0 to 1.0)
+    - `y` (number, required) - Normalized Y coordinate (0.0 to 1.0)
+    - `viewportName` (string, optional) - Name of the viewport to use (uses active viewport if not specified)
+  - Return value:
+    - `hit` (boolean) - Whether an object was hit
+    - `object_info` (object, only when hit) - Information about the hit object
+      - `guid` (string) - Object's GUID
+      - `type` (string) - Geometry type
+      - `hit_point` (object) - Hit point coordinates (x, y, z)
+      - `layer` (number) - Layer index
+
 ### RhinoMCPTools.Misc
 Utility tools.
 
@@ -377,6 +401,36 @@ Grasshopper integration tools.
   - Function: Delete a component from the canvas
   - Parameters:
     - `component_id` (string, required) - GUID of the component to delete
+
+- **get_component_info**
+  - Function: Retrieves detailed information about a specific Grasshopper component, including its parameters and connection states
+  - Parameters:
+    - `component_id` (string, required) - GUID of the component to get information for
+  - Return value:
+    - `info` (object) - Basic component information
+      - `guid` (string) - Component's GUID
+      - `name` (string) - Component name
+      - `nickname` (string) - Nickname
+      - `description` (string) - Description
+      - `category` (string) - Category
+      - `subcategory` (string) - Subcategory
+      - `position` (object) - Position on canvas (x, y)
+    - `parameters` (object) - Parameter information
+      - `input` (array) - Input parameters with connection info
+      - `output` (array) - Output parameters with connection info
+
+- **get_runtime_messages**
+  - Function: Retrieves runtime messages from specified Grasshopper components
+  - Parameters:
+    - `component_ids` (array of string, required) - Array of component GUIDs to retrieve messages from
+  - Return value:
+    - `results` (array) - Message information for each component
+      - `id` (string) - Component's GUID
+      - `name` (string) - Component name
+      - `nickname` (string) - Nickname
+      - `messages` (array) - Array of runtime messages
+        - `level` (string) - Message level ("error", "warning", "remark")
+        - `message` (string) - Message content
 
 #### Wire Connections (Wires)
 

@@ -4,7 +4,8 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using Grasshopper;
 using Grasshopper.Kernel;
-using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using RhinoMCPServer.Common;
 
@@ -31,7 +32,7 @@ namespace RhinoMCPTools.Grasshopper
             }
             """);
 
-        public Task<CallToolResponse> ExecuteAsync(CallToolRequestParams request, IMcpServer? server)
+        public Task<CallToolResult> ExecuteAsync(CallToolRequestParams request, McpServer? server)
         {
             try
             {
@@ -47,7 +48,7 @@ namespace RhinoMCPTools.Grasshopper
                 GH_Document? doc = Instances.ActiveCanvas?.Document;
                 if (doc == null)
                 {
-                    throw new McpServerException("No active Grasshopper document found");
+                    throw new McpProtocolException("No active Grasshopper document found");
                 }
 
                 // Get all components from the canvas
@@ -92,21 +93,20 @@ namespace RhinoMCPTools.Grasshopper
                     components = components
                 };
 
-                return Task.FromResult(new CallToolResponse()
+                return Task.FromResult(new CallToolResult()
                 {
-                    Content = [new Content() 
+                    Content = [new TextContentBlock() 
                     { 
                         Text = JsonSerializer.Serialize(response, new JsonSerializerOptions 
                         { 
                             WriteIndented = true 
                         }), 
-                        Type = "text" 
                     }]
                 });
             }
             catch (Exception ex)
             {
-                throw new McpServerException($"Error getting canvas components: {ex.Message}", ex);
+                throw new McpProtocolException($"Error getting canvas components: {ex.Message}", ex);
             }
         }
     }

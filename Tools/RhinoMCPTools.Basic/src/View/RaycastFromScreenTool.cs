@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
-using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using Rhino;
 using Rhino.Geometry;
@@ -51,16 +52,16 @@ namespace RhinoMCPTools.Basic
             }
             """);
 
-        public Task<CallToolResponse> ExecuteAsync(CallToolRequestParams request, IMcpServer? server)
+        public Task<CallToolResult> ExecuteAsync(CallToolRequestParams request, McpServer? server)
         {
             if (request.Arguments is null)
             {
-                throw new McpServerException("Missing required arguments");
+                throw new McpProtocolException("Missing required arguments");
             }
 
             if (!request.Arguments.TryGetValue("x", out var xValue) || !request.Arguments.TryGetValue("y", out var yValue))
             {
-                throw new McpServerException("Missing required arguments: 'x' and 'y' are required");
+                throw new McpProtocolException("Missing required arguments: 'x' and 'y' are required");
             }
 
             // 0.0-1.0の正規化された値を取得
@@ -70,7 +71,7 @@ namespace RhinoMCPTools.Basic
             // 値の範囲チェック
             if (normalizedX < 0.0 || normalizedX > 1.0 || normalizedY < 0.0 || normalizedY > 1.0)
             {
-                throw new McpServerException("Coordinates must be between 0.0 and 1.0");
+                throw new McpProtocolException("Coordinates must be between 0.0 and 1.0");
             }
 
             var rhinoDoc = RhinoDoc.ActiveDoc;
@@ -80,7 +81,7 @@ namespace RhinoMCPTools.Basic
 
             if (view == null)
             {
-                throw new McpServerException("Viewport not found");
+                throw new McpProtocolException("Viewport not found");
             }
 
             // スクリーン座標からレイを生成
@@ -106,15 +107,14 @@ namespace RhinoMCPTools.Basic
             if (raycastResults == null || raycastResults.Length == 0)
             {
                 // ヒットしなかった場合
-                return Task.FromResult(new CallToolResponse()
+                return Task.FromResult(new CallToolResult()
                 {
-                    Content = [new Content()
+                    Content = [new TextContentBlock()
                     {
                         Text = JsonSerializer.Serialize(
                             new { status = "success", hit = false },
                             new JsonSerializerOptions { WriteIndented = true }
-                        ),
-                        Type = "text"
+                        )
                     }]
                 });
             }
@@ -145,12 +145,11 @@ namespace RhinoMCPTools.Basic
                 }
             };
 
-            return Task.FromResult(new CallToolResponse()
+            return Task.FromResult(new CallToolResult()
             {
-                Content = [new Content() 
-                { 
-                    Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true }), 
-                    Type = "text" 
+                Content = [new TextContentBlock()
+                {
+                    Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true })
                 }]
             });
         }

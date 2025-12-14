@@ -1,5 +1,5 @@
 using System;
-using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -29,6 +29,6 @@ namespace RhinoMCPServer.Common
         /// <summary>
         /// ツールの実行
         /// </summary>
-        Task<CallToolResponse> ExecuteAsync(CallToolRequestParams request, IMcpServer? server);
+        Task<CallToolResult> ExecuteAsync(CallToolRequestParams request, McpServer? server);
     }
 }

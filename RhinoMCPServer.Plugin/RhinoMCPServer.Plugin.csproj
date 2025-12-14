@@ -31,11 +31,13 @@
 
   <!-- MacOS -->
   <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-    <MyDestinationFolder>$(HOME)/Library/Application Support/McNeel/Rhinoceros/9.0/MacPlugins/RhinoMCPServer</MyDestinationFolder>
+    <MyDestinationFolder>$(HOME)/Library/Application Support/McNeel/Rhinoceros/8.0/MacPlugins/RhinoMCPServer</MyDestinationFolder>
   </PropertyGroup>
 
-  <!-- ビルド前にToolsプロジェクトをビルド -->
-  <Target Name="BuildTools" BeforeTargets="BeforeBuild">
+  <!-- ビルド前にTools と McpHost プロジェクトをビルド -->
+  <Target Name="BuildDependencies" BeforeTargets="BeforeBuild">
+    <Message Text="Building McpHost project..." Importance="high" />
+    <Exec Command="dotnet build ../RhinoMCPServer.McpHost/RhinoMCPServer.McpHost.csproj -c $(Configuration)" />
     <Message Text="Building Tools projects..." Importance="high" />
     <Exec Command="dotnet build ../Tools/RhinoMCPTools.Basic/RhinoMCPTools.Basic.csproj -c $(Configuration)" />
     <Exec Command="dotnet build ../Tools/RhinoMCPTools.Misc/RhinoMCPTools.Misc.csproj -c $(Configuration)" />
@@ -45,11 +47,20 @@
   <!-- ビルド後にプラグインとツールをコピー -->
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <ItemGroup>
-      <MySourceFiles Include="$(TargetDir)\**" />
+      <!-- メインのプラグインファイル（McpHostサブディレクトリを除く） -->
+      <MainPluginFiles Include="$(TargetDir)*.*" Exclude="$(TargetDir)McpHost/**" />
+      <!-- McpHostサブディレクトリのファイル -->
+      <McpHostFiles Include="$(TargetDir)McpHost/**/*.*" />
+      <!-- Toolsのファイル -->
       <ToolFiles Include="../Tools/**/bin/$(Configuration)/net8.0/*.dll" />
     </ItemGroup>
-    <Copy SourceFiles="@(MySourceFiles)" DestinationFolder="$(MyDestinationFolder)" />
-    <Copy SourceFiles="@(ToolFiles)" DestinationFolder="$(MyDestinationFolder)\Tools" />
+    <!-- メインプラグインファイルをコピー -->
+    <Copy SourceFiles="@(MainPluginFiles)" DestinationFolder="$(MyDestinationFolder)" />
+    <!-- McpHostディレクトリをコピー（ディレクトリ構造を保持） -->
+    <MakeDir Directories="$(MyDestinationFolder)/McpHost" />
+    <Copy SourceFiles="@(McpHostFiles)" DestinationFiles="@(McpHostFiles->'$(MyDestinationFolder)/McpHost/%(RecursiveDir)%(Filename)%(Extension)')" />
+    <!-- Toolsをコピー -->
+    <Copy SourceFiles="@(ToolFiles)" DestinationFolder="$(MyDestinationFolder)/Tools" />
   </Target>
   
 </Project>

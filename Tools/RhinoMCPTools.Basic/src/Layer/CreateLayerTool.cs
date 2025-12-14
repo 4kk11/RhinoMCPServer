@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
-using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using Rhino;
 using Rhino.DocObjects;
@@ -44,16 +45,16 @@ namespace RhinoMCPTools.Basic
             }
             """);
 
-        public Task<CallToolResponse> ExecuteAsync(CallToolRequestParams request, IMcpServer? server)
+        public Task<CallToolResult> ExecuteAsync(CallToolRequestParams request, McpServer? server)
         {
             if (request.Arguments is null)
             {
-                throw new McpServerException("Missing required arguments");
+                throw new McpProtocolException("Missing required arguments");
             }
 
             if (!request.Arguments.TryGetValue("full_path", out var pathValue))
             {
-                throw new McpServerException("Missing required argument 'full_path'");
+                throw new McpProtocolException("Missing required argument 'full_path'");
             }
 
             var fullPath = pathValue.ToString();
@@ -63,7 +64,7 @@ namespace RhinoMCPTools.Basic
             var existingLayer = rhinoDoc.Layers.FindByFullPath(fullPath, RhinoMath.UnsetIntIndex);
             if (existingLayer != RhinoMath.UnsetIntIndex)
             {
-                throw new McpServerException($"Layer '{fullPath}' already exists");
+                throw new McpProtocolException($"Layer '{fullPath}' already exists");
             }
 
             // カラーの取得
@@ -82,7 +83,7 @@ namespace RhinoMCPTools.Basic
                     }
                     catch
                     {
-                        throw new McpServerException("Invalid color format. Use hex format (e.g., '#FF0000')");
+                        throw new McpProtocolException("Invalid color format. Use hex format (e.g., '#FF0000')");
                     }
                 }
             }
@@ -91,7 +92,7 @@ namespace RhinoMCPTools.Basic
             var index = rhinoDoc.Layers.AddPath(fullPath, color);
             if (index == RhinoMath.UnsetIntIndex)
             {
-                throw new McpServerException("Failed to create layer");
+                throw new McpProtocolException("Failed to create layer");
             }
 
             // 作成されたレイヤーの取得と設定の更新
@@ -130,9 +131,9 @@ namespace RhinoMCPTools.Basic
                 }
             };
 
-            return Task.FromResult(new CallToolResponse()
+            return Task.FromResult(new CallToolResult()
             {
-                Content = [new Content() { Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true }), Type = "text" }]
+                Content = [new TextContentBlock() { Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true }) }]
             });
         }
     }

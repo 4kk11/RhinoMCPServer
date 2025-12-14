@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
-using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using Rhino;
 using Rhino.Geometry;
@@ -48,17 +49,17 @@ namespace RhinoMCPTools.Basic
             }
             """);
 
-        public Task<CallToolResponse> ExecuteAsync(CallToolRequestParams request, IMcpServer? server)
+        public Task<CallToolResult> ExecuteAsync(CallToolRequestParams request, McpServer? server)
         {
             if (request.Arguments is null)
             {
-                throw new McpServerException("Missing required arguments");
+                throw new McpProtocolException("Missing required arguments");
             }
 
             if (!request.Arguments.TryGetValue("center", out var centerValue) ||
                 !request.Arguments.TryGetValue("radius", out var radiusValue))
             {
-                throw new McpServerException("Missing required arguments: 'center' and 'radius' are required");
+                throw new McpProtocolException("Missing required arguments: 'center' and 'radius' are required");
             }
 
             var centerElement = (JsonElement)centerValue;
@@ -66,7 +67,7 @@ namespace RhinoMCPTools.Basic
 
             if (radius <= 0)
             {
-                throw new McpServerException("Radius must be greater than 0");
+                throw new McpProtocolException("Radius must be greater than 0");
             }
 
             // 中心点の座標を取得
@@ -92,9 +93,9 @@ namespace RhinoMCPTools.Basic
                 }
             };
 
-            return Task.FromResult(new CallToolResponse()
+            return Task.FromResult(new CallToolResult()
             {
-                Content = [new Content() { Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true }), Type = "text" }]
+                Content = [new TextContentBlock() { Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true }) }]
             });
         }
     }

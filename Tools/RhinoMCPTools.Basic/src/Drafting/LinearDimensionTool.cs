@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
-using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using Rhino;
 using Rhino.Geometry;
@@ -74,17 +75,17 @@ namespace RhinoMCPTools.Basic
             }
             """);
 
-        public Task<CallToolResponse> ExecuteAsync(CallToolRequestParams request, IMcpServer? server)
+        public Task<CallToolResult> ExecuteAsync(CallToolRequestParams request, McpServer? server)
         {
             if (request.Arguments is null)
             {
-                throw new McpServerException("Missing required arguments");
+                throw new McpProtocolException("Missing required arguments");
             }
 
             if (!request.Arguments.TryGetValue("start", out var startValue) ||
                 !request.Arguments.TryGetValue("end", out var endValue))
             {
-                throw new McpServerException("Missing required arguments: 'start' and 'end' points are required");
+                throw new McpProtocolException("Missing required arguments: 'start' and 'end' points are required");
             }
 
             var startElement = (JsonElement)startValue;
@@ -111,7 +112,7 @@ namespace RhinoMCPTools.Basic
                 Convert.ToDouble(scaleValue.ToString()) : 1.0;
             if (scale <= 0)
             {
-                throw new McpServerException("Dimension scale must be greater than 0");
+                throw new McpProtocolException("Dimension scale must be greater than 0");
             }
 
             var rhinoDoc = RhinoDoc.ActiveDoc;
@@ -169,9 +170,9 @@ namespace RhinoMCPTools.Basic
                 }
             };
 
-            return Task.FromResult(new CallToolResponse()
+            return Task.FromResult(new CallToolResult()
             {
-                Content = [new Content() { Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true }), Type = "text" }]
+                Content = [new TextContentBlock() { Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true }) }]
             });
         }
     }

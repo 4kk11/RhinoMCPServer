@@ -1,4 +1,5 @@
-using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using Rhino;
 using Rhino.Geometry;
@@ -50,11 +51,11 @@ namespace RhinoMCPTools.Basic
             }
             """);
 
-        public Task<CallToolResponse> ExecuteAsync(CallToolRequestParams request, IMcpServer? server)
+        public Task<CallToolResult> ExecuteAsync(CallToolRequestParams request, McpServer? server)
         {
             if (request.Arguments is null || !request.Arguments.TryGetValue("points", out var pointsValue))
             {
-                throw new McpServerException("Missing required argument 'points'");
+                throw new McpProtocolException("Missing required argument 'points'");
             }
 
             var points = new List<Point3d>();
@@ -69,7 +70,7 @@ namespace RhinoMCPTools.Basic
 
             if (points.Count < 2)
             {
-                throw new McpServerException("At least 2 points are required to create a polyline");
+                throw new McpProtocolException("At least 2 points are required to create a polyline");
             }
 
             var polyline = new Polyline(points);
@@ -87,9 +88,9 @@ namespace RhinoMCPTools.Basic
                 }
             };
 
-            return Task.FromResult(new CallToolResponse()
+            return Task.FromResult(new CallToolResult()
             {
-                Content = [new Content() { Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true }), Type = "text" }]
+                Content = [new TextContentBlock() { Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true }) }]
             });
         }
     }

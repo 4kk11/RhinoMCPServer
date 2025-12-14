@@ -4,7 +4,8 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using Grasshopper;
 using Grasshopper.Kernel;
-using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using RhinoMCPServer.Common;
 using Rhino;
@@ -33,33 +34,33 @@ namespace RhinoMCPTools.Grasshopper
             }
             """);
 
-        public Task<CallToolResponse> ExecuteAsync(CallToolRequestParams request, IMcpServer? server)
+        public Task<CallToolResult> ExecuteAsync(CallToolRequestParams request, McpServer? server)
         {
             try
             {
                 // Validate request parameters
                 if (request.Arguments is null)
                 {
-                    throw new McpServerException("Missing required arguments");
+                    throw new McpProtocolException("Missing required arguments");
                 }
 
                 if (!request.Arguments.TryGetValue("source_param_id", out var sourceValue) ||
                     !request.Arguments.TryGetValue("target_param_id", out var targetValue))
                 {
-                    throw new McpServerException("Missing required parameters: source_param_id and/or target_param_id");
+                    throw new McpProtocolException("Missing required parameters: source_param_id and/or target_param_id");
                 }
 
                 if (!Guid.TryParse(sourceValue.ToString(), out var sourceGuid) ||
                     !Guid.TryParse(targetValue.ToString(), out var targetGuid))
                 {
-                    throw new McpServerException("Invalid GUID format for parameters");
+                    throw new McpProtocolException("Invalid GUID format for parameters");
                 }
 
                 // Get active Grasshopper document
                 GH_Document? doc = Instances.ActiveDocument;
                 if (doc == null)
                 {
-                    throw new McpServerException("No active Grasshopper document found");
+                    throw new McpProtocolException("No active Grasshopper document found");
                 }
 
                 // Find source and target parameters
@@ -68,19 +69,19 @@ namespace RhinoMCPTools.Grasshopper
 
                 if (sourceParam == null || targetParam == null)
                 {
-                    throw new McpServerException("One or both parameters not found in the document");
+                    throw new McpProtocolException("One or both parameters not found in the document");
                 }
 
                 // Validate parameter types
                 if (!(sourceParam is IGH_Param sourceGHParam) || !(targetParam is IGH_Param targetGHParam))
                 {
-                    throw new McpServerException("Invalid parameter types");
+                    throw new McpProtocolException("Invalid parameter types");
                 }
 
                 // Check if the parameters are actually connected
                 if (!targetGHParam.Sources.Contains(sourceGHParam))
                 {
-                    throw new McpServerException("The specified parameters are not connected");
+                    throw new McpProtocolException("The specified parameters are not connected");
                 }
 
                 // Disconnect the parameters
@@ -111,21 +112,20 @@ namespace RhinoMCPTools.Grasshopper
                     }
                 };
 
-                return Task.FromResult(new CallToolResponse()
+                return Task.FromResult(new CallToolResult()
                 {
-                    Content = [new Content() 
+                    Content = [new TextContentBlock() 
                     { 
                         Text = JsonSerializer.Serialize(response, new JsonSerializerOptions 
                         { 
                             WriteIndented = true 
                         }), 
-                        Type = "text" 
                     }]
                 });
             }
             catch (Exception ex)
             {
-                throw new McpServerException($"Error disconnecting component wire: {ex.Message}", ex);
+                throw new McpProtocolException($"Error disconnecting component wire: {ex.Message}", ex);
             }
         }
     }

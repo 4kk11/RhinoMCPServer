@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- Copy all dependencies to output directory for AssemblyLoadContext -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <!-- Output to McpHost subdirectory of Plugin output -->
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="RhinoMCPServer.McpHost.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol" Version="0.5.0-preview.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.3" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+    <PackageReference Include="System.Text.Json" Version="10.0.0" />
+  </ItemGroup>
+
+  <!-- Copy McpHost output to Plugin's McpHost directory after build -->
+  <Target Name="CopyToPluginMcpHost" AfterTargets="Build">
+    <PropertyGroup>
+      <PluginOutputDir>$(MSBuildThisFileDirectory)../RhinoMCPServer.Plugin/bin/$(Configuration)/net8.0/McpHost/</PluginOutputDir>
+    </PropertyGroup>
+    <MakeDir Directories="$(PluginOutputDir)" />
+    <Copy SourceFiles="@(ReferenceCopyLocalPaths)" DestinationFolder="$(PluginOutputDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(PluginOutputDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(TargetDir)$(TargetName).deps.json" DestinationFolder="$(PluginOutputDir)" SkipUnchangedFiles="true" Condition="Exists('$(TargetDir)$(TargetName).deps.json')" />
+  </Target>
+
+</Project>

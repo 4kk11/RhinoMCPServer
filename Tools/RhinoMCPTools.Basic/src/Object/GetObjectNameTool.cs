@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
-using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using Rhino;
 using System.Text.Json;
@@ -26,28 +27,28 @@ namespace RhinoMCPTools.Basic
             }
             """);
 
-        public Task<CallToolResponse> ExecuteAsync(CallToolRequestParams request, IMcpServer? server)
+        public Task<CallToolResult> ExecuteAsync(CallToolRequestParams request, McpServer? server)
         {
             if (request.Arguments is null)
             {
-                throw new McpServerException("Missing required arguments");
+                throw new McpProtocolException("Missing required arguments");
             }
 
             if (!request.Arguments.TryGetValue("guid", out var guidValue))
             {
-                throw new McpServerException("Missing required argument: 'guid' is required");
+                throw new McpProtocolException("Missing required argument: 'guid' is required");
             }
 
             var rhinoDoc = RhinoDoc.ActiveDoc;
             if (!Guid.TryParse(guidValue.ToString(), out Guid objectGuid))
             {
-                throw new McpServerException("Invalid GUID format");
+                throw new McpProtocolException("Invalid GUID format");
             }
 
             var rhinoObject = rhinoDoc.Objects.Find(objectGuid);
             if (rhinoObject == null)
             {
-                throw new McpServerException($"No object found with GUID: {objectGuid}");
+                throw new McpProtocolException($"No object found with GUID: {objectGuid}");
             }
 
             var response = new
@@ -60,9 +61,9 @@ namespace RhinoMCPTools.Basic
                 }
             };
 
-            return Task.FromResult(new CallToolResponse()
+            return Task.FromResult(new CallToolResult()
             {
-                Content = [new Content() { Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true }), Type = "text" }]
+                Content = [new TextContentBlock() { Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true }) }]
             });
         }
     }

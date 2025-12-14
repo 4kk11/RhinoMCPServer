@@ -3,7 +3,8 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using Grasshopper;
 using Grasshopper.Kernel;
-using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using RhinoMCPServer.Common;
 using Rhino;
@@ -41,30 +42,30 @@ namespace RhinoMCPTools.Grasshopper
             }
             """);
 
-        public Task<CallToolResponse> ExecuteAsync(CallToolRequestParams request, IMcpServer? server)
+        public Task<CallToolResult> ExecuteAsync(CallToolRequestParams request, McpServer? server)
         {
             try
             {
                 // Validate request parameters
                 if (request.Arguments is null)
                 {
-                    throw new McpServerException("Missing required arguments");
+                    throw new McpProtocolException("Missing required arguments");
                 }
 
                 if (!request.Arguments.TryGetValue("slider_id", out var sliderValue) ||
                     !request.Arguments.TryGetValue("value", out var valueValue))
                 {
-                    throw new McpServerException("Missing required parameters: slider_id and/or value");
+                    throw new McpProtocolException("Missing required parameters: slider_id and/or value");
                 }
 
                 if (!Guid.TryParse(sliderValue.ToString(), out var sliderGuid))
                 {
-                    throw new McpServerException("Invalid GUID format for slider_id");
+                    throw new McpProtocolException("Invalid GUID format for slider_id");
                 }
 
                 if (!decimal.TryParse(valueValue.ToString(), out var value))
                 {
-                    throw new McpServerException("Invalid number format for value");
+                    throw new McpProtocolException("Invalid number format for value");
                 }
 
                 // Parse optional range parameters
@@ -75,7 +76,7 @@ namespace RhinoMCPTools.Grasshopper
                 {
                     if (!decimal.TryParse(minValue.ToString(), out var min))
                     {
-                        throw new McpServerException("Invalid number format for minimum");
+                        throw new McpProtocolException("Invalid number format for minimum");
                     }
                     minimum = min;
                 }
@@ -84,7 +85,7 @@ namespace RhinoMCPTools.Grasshopper
                 {
                     if (!decimal.TryParse(maxValue.ToString(), out var max))
                     {
-                        throw new McpServerException("Invalid number format for maximum");
+                        throw new McpProtocolException("Invalid number format for maximum");
                     }
                     maximum = max;
                 }
@@ -93,20 +94,20 @@ namespace RhinoMCPTools.Grasshopper
                 GH_Document? doc = Instances.ActiveDocument;
                 if (doc == null)
                 {
-                    throw new McpServerException("No active Grasshopper document found");
+                    throw new McpProtocolException("No active Grasshopper document found");
                 }
 
                 // Find the slider component
                 var obj = doc.FindObject(sliderGuid, false);
                 if (obj == null)
                 {
-                    throw new McpServerException($"Slider with GUID {sliderGuid} not found");
+                    throw new McpProtocolException($"Slider with GUID {sliderGuid} not found");
                 }
 
                 // Validate that the object is a number slider
                 if (!(obj is GH_NumberSlider slider))
                 {
-                    throw new McpServerException($"Object with GUID {sliderGuid} is not a Number Slider component");
+                    throw new McpProtocolException($"Object with GUID {sliderGuid} is not a Number Slider component");
                 }
 
                 // Update slider range if provided
@@ -117,7 +118,7 @@ namespace RhinoMCPTools.Grasshopper
 
                     if (newMin >= newMax)
                     {
-                        throw new McpServerException($"Invalid range: minimum ({newMin}) must be less than maximum ({newMax})");
+                        throw new McpProtocolException($"Invalid range: minimum ({newMin}) must be less than maximum ({newMax})");
                     }
 
                     slider.Slider.Minimum = newMin;
@@ -127,7 +128,7 @@ namespace RhinoMCPTools.Grasshopper
                 // Ensure value is within the slider's range
                 if (value < slider.Slider.Minimum || value > slider.Slider.Maximum)
                 {
-                    throw new McpServerException($"Value {value} is outside the slider's range [{slider.Slider.Minimum}, {slider.Slider.Maximum}]");
+                    throw new McpProtocolException($"Value {value} is outside the slider's range [{slider.Slider.Minimum}, {slider.Slider.Maximum}]");
                 }
 
                 // Set the slider value
@@ -162,21 +163,20 @@ namespace RhinoMCPTools.Grasshopper
                     }
                 };
 
-                return Task.FromResult(new CallToolResponse()
+                return Task.FromResult(new CallToolResult()
                 {
-                    Content = [new Content() 
-                    { 
-                        Text = JsonSerializer.Serialize(response, new JsonSerializerOptions 
-                        { 
-                            WriteIndented = true 
-                        }), 
-                        Type = "text" 
+                    Content = [new TextContentBlock()
+                    {
+                        Text = JsonSerializer.Serialize(response, new JsonSerializerOptions
+                        {
+                            WriteIndented = true
+                        })
                     }]
                 });
             }
             catch (Exception ex)
             {
-                throw new McpServerException($"Error configuring number slider: {ex.Message}", ex);
+                throw new McpProtocolException($"Error configuring number slider: {ex.Message}", ex);
             }
         }
     }

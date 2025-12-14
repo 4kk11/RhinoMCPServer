@@ -3,7 +3,8 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using Grasshopper;
 using Grasshopper.Kernel;
-using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using RhinoMCPServer.Common;
 using Rhino;
@@ -33,25 +34,25 @@ namespace RhinoMCPTools.Grasshopper
             }
             """);
 
-        public Task<CallToolResponse> ExecuteAsync(CallToolRequestParams request, IMcpServer? server)
+        public Task<CallToolResult> ExecuteAsync(CallToolRequestParams request, McpServer? server)
         {
             try
             {
                 // Validate request parameters
                 if (request.Arguments is null)
                 {
-                    throw new McpServerException("Missing required arguments");
+                    throw new McpProtocolException("Missing required arguments");
                 }
 
                 if (!request.Arguments.TryGetValue("panel_id", out var panelValue) ||
                     !request.Arguments.TryGetValue("text", out var textValue))
                 {
-                    throw new McpServerException("Missing required parameters: panel_id and/or text");
+                    throw new McpProtocolException("Missing required parameters: panel_id and/or text");
                 }
 
                 if (!Guid.TryParse(panelValue.ToString(), out var panelGuid))
                 {
-                    throw new McpServerException("Invalid GUID format for panel_id");
+                    throw new McpProtocolException("Invalid GUID format for panel_id");
                 }
 
                 string text = textValue.ToString() ?? string.Empty;
@@ -60,20 +61,20 @@ namespace RhinoMCPTools.Grasshopper
                 GH_Document? doc = Instances.ActiveDocument;
                 if (doc == null)
                 {
-                    throw new McpServerException("No active Grasshopper document found");
+                    throw new McpProtocolException("No active Grasshopper document found");
                 }
 
                 // Find the panel component
                 var obj = doc.FindObject(panelGuid, false);
                 if (obj == null)
                 {
-                    throw new McpServerException($"Panel with GUID {panelGuid} not found");
+                    throw new McpProtocolException($"Panel with GUID {panelGuid} not found");
                 }
 
                 // Validate that the object is a panel
                 if (!(obj is GH_Panel panel))
                 {
-                    throw new McpServerException($"Object with GUID {panelGuid} is not a Panel component");
+                    throw new McpProtocolException($"Object with GUID {panelGuid} is not a Panel component");
                 }
 
                 // Store panel info for response
@@ -109,21 +110,20 @@ namespace RhinoMCPTools.Grasshopper
                     }
                 };
 
-                return Task.FromResult(new CallToolResponse()
+                return Task.FromResult(new CallToolResult()
                 {
-                    Content = [new Content() 
+                    Content = [new TextContentBlock() 
                     { 
                         Text = JsonSerializer.Serialize(response, new JsonSerializerOptions 
                         { 
                             WriteIndented = true 
                         }), 
-                        Type = "text" 
                     }]
                 });
             }
             catch (Exception ex)
             {
-                throw new McpServerException($"Error setting panel text: {ex.Message}", ex);
+                throw new McpProtocolException($"Error setting panel text: {ex.Message}", ex);
             }
         }
     }

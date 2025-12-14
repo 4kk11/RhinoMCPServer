@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
-using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using Rhino;
 using Rhino.Geometry;
@@ -42,11 +43,11 @@ namespace RhinoMCPTools.Basic
             }
             """);
 
-        public Task<CallToolResponse> ExecuteAsync(CallToolRequestParams request, IMcpServer? server)
+        public Task<CallToolResult> ExecuteAsync(CallToolRequestParams request, McpServer? server)
         {
             if (request.Arguments is null || !request.Arguments.TryGetValue("radius", out var radius))
             {
-                throw new McpServerException("Missing required argument 'radius'");
+                throw new McpProtocolException("Missing required argument 'radius'");
             }
 
             var x = request.Arguments.TryGetValue("x", out var xValue) ? Convert.ToDouble(xValue.ToString()) : 0.0;
@@ -55,7 +56,7 @@ namespace RhinoMCPTools.Basic
 
             var center = new Point3d(x, y, z);
             var rhinoDoc = RhinoDoc.ActiveDoc;
-            var sphereGeometry = new Rhino.Geometry.Sphere(center, Convert.ToDouble(radius?.ToString()));
+            var sphereGeometry = new Rhino.Geometry.Sphere(center, Convert.ToDouble(radius.ToString()));
             var guid = rhinoDoc.Objects.AddSphere(sphereGeometry, null);
             rhinoDoc.Views.Redraw();
 
@@ -64,7 +65,7 @@ namespace RhinoMCPTools.Basic
                 status = "success",
                 sphere = new
                 {
-                    radius = Convert.ToDouble(radius?.ToString()),
+                    radius = Convert.ToDouble(radius.ToString()),
                     guid = guid.ToString(),
                     center = new
                     {
@@ -75,9 +76,9 @@ namespace RhinoMCPTools.Basic
                 }
             };
 
-            return Task.FromResult(new CallToolResponse()
+            return Task.FromResult(new CallToolResult()
             {
-                Content = [new Content() { Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true }), Type = "text" }]
+                Content = [new TextContentBlock() { Text = JsonSerializer.Serialize(response, new JsonSerializerOptions { WriteIndented = true }) }]
             });
         }
     }

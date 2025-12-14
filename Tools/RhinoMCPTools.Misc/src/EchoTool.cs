@@ -1,4 +1,5 @@
-using ModelContextProtocol.Protocol.Types;
+using ModelContextProtocol;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using Rhino;
 using RhinoMCPServer.Common;
@@ -25,18 +26,18 @@ namespace RhinoMCPServer.MCP.Tools
             }
             """);
 
-        public Task<CallToolResponse> ExecuteAsync(CallToolRequestParams request, IMcpServer? server)
+        public Task<CallToolResult> ExecuteAsync(CallToolRequestParams request, McpServer? server)
         {
             if (request.Arguments is null || !request.Arguments.TryGetValue("message", out var message))
             {
-                throw new McpServerException("Missing required argument 'message'");
+                throw new McpProtocolException("Missing required argument 'message'", McpErrorCode.InvalidParams);
             }
 
             RhinoApp.WriteLine("Echo: " + message.ToString());
 
-            return Task.FromResult(new CallToolResponse()
+            return Task.FromResult(new CallToolResult()
             {
-                Content = [new Content() { Text = "Echo: " + message.ToString(), Type = "text" }]
+                Content = [new TextContentBlock() { Text = "Echo: " + message.ToString() }]
             });
         }
     }
