@@ -42,7 +42,10 @@ namespace RhinoMCPServer.Common
         private void LoadPlugin(string dllPath)
         {
             // 各プラグインを独立したコンテキストでロード
-            var loadContext = new AssemblyLoadContext(Path.GetFileNameWithoutExtension(dllPath), true);
+            // ToolPluginLoadContextを使用して依存DLLもToolsディレクトリから解決
+            var loadContext = new ToolPluginLoadContext(
+                Path.GetFileNameWithoutExtension(dllPath),
+                _pluginDirectory);
             _loadContexts.Add(loadContext);
 
             using var fs = new FileStream(dllPath, FileMode.Open, FileAccess.Read);
