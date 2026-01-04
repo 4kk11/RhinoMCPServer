@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Loader;
@@ -20,7 +21,15 @@ namespace RhinoMCPServer.Common
 
         protected override Assembly? Load(AssemblyName assemblyName)
         {
-            // プラグインディレクトリからDLLを探す
+            // Rhinoランタイムと共有するアセンブリはデフォルトコンテキストを使用
+            // 隔離コンテキストでロードすると型同一性の問題が発生する
+            // (例: System.Drawing.Size がRhino APIに渡せなくなる)
+            if (ShouldUseDefaultContext(assemblyName.Name))
+            {
+                return null;
+            }
+
+            // プラグイン固有の依存DLL（ImageSharpなど）のみ隔離コンテキストでロード
             var dllPath = Path.Combine(_pluginDirectory, $"{assemblyName.Name}.dll");
             if (File.Exists(dllPath))
             {
@@ -29,6 +38,34 @@ namespace RhinoMCPServer.Common
 
             // 見つからない場合はデフォルトコンテキストにフォールバック
             return null;
+        }
+
+        /// <summary>
+        /// 指定されたアセンブリをデフォルトコンテキストから使用すべきかを判定。
+        /// Rhino APIとの型互換性が必要なアセンブリのみデフォルトコンテキストを使用。
+        /// 注意: System.Text.JsonはMCP SDKが10.x必要なため隔離コンテキストで使用する。
+        /// </summary>
+        private static bool ShouldUseDefaultContext(string? assemblyName)
+        {
+            if (string.IsNullOrEmpty(assemblyName))
+            {
+                return false;
+            }
+
+            // System.Drawing系: Rhino APIとの型互換性が必要
+            // (例: System.Drawing.Size, System.Drawing.Bitmap)
+            if (assemblyName.StartsWith("System.Drawing", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            // Rhino関連アセンブリ: 型同一性が必要
+            if (assemblyName.StartsWith("Rhino", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 }
