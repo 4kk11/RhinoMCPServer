@@ -137,79 +137,94 @@ namespace RhinoMCPTools.Grasshopper.Canvas
                     throw new McpProtocolException("One of component_guid, type_name, or name is required");
                 }
 
-                // アクティブなGrasshopperドキュメントを取得
-                var doc = Instances.ActiveDocument;
-                if (doc == null)
-                {
-                    throw new McpProtocolException("No active Grasshopper document found");
-                }
+                // UIスレッドでインスタンス生成・ドキュメント追加を実行
+                object? result = null;
+                var capturedInfo = componentInfo;
 
-                // コンポーネントのインスタンスを作成
-                var component = componentInfo.CreateInstance();
-
-                // コンポーネントをドキュメントに追加
-                doc.AddObject(component, false);
-                if (component.Attributes != null)
+                RhinoApp.InvokeOnUiThread(new Action(() =>
                 {
-                    component.Attributes.Pivot = new System.Drawing.PointF((float)x, (float)y);
-                }
-
-                // UIの更新
-                component.ExpireSolution(true);
-                RhinoApp.InvokeOnUiThread(() =>
-                {
-                    Instances.RedrawCanvas();
-                });
-
-                // レスポンスを構築
-                var response = new
-                {
-                    status = "success",
-                    component = new
+                    var doc = Instances.ActiveDocument;
+                    if (doc == null)
                     {
-                        guid = component.InstanceGuid.ToString(),
-                        component_guid = componentInfo.ComponentGuid.ToString(),
-                        name = component.Name,
-                        position = new
-                        {
-                            x,
-                            y
-                        },
-                        parameters = new
-                        {
-                            input = component is IGH_Component ghComponent
-                                ? ghComponent.Params.Input.Select(p => new
-                                {
-                                    name = p.Name,
-                                    nickname = p.NickName,
-                                    description = p.Description,
-                                    type_name = p.TypeName,
-                                    param_id = p.InstanceGuid.ToString(),
-                                    optional = p.Optional,
-                                }).ToArray()
-                                : Array.Empty<object>(),
-                            output = component is IGH_Component ghOutputComponent
-                                ? ghOutputComponent.Params.Output.Select(p => new
-                                {
-                                    name = p.Name,
-                                    nickname = p.NickName,
-                                    description = p.Description,
-                                    type_name = p.TypeName,
-                                    param_id = p.InstanceGuid.ToString()
-                                }).ToArray()
-                                : Array.Empty<object>()
-                        }
+                        result = new { error = "No active Grasshopper document found" };
+                        return;
                     }
-                };
+
+                    // コンポーネントのインスタンスを作成
+                    var component = capturedInfo.CreateInstance();
+
+                    // コンポーネントをドキュメントに追加
+                    doc.AddObject(component, false);
+                    if (component.Attributes != null)
+                    {
+                        component.Attributes.Pivot = new System.Drawing.PointF((float)x, (float)y);
+                    }
+
+                    // UIの更新
+                    component.ExpireSolution(true);
+                    Instances.RedrawCanvas();
+
+                    // レスポンスを構築
+                    result = new
+                    {
+                        status = "success",
+                        component = new
+                        {
+                            guid = component.InstanceGuid.ToString(),
+                            component_guid = capturedInfo.ComponentGuid.ToString(),
+                            name = component.Name,
+                            position = new
+                            {
+                                x,
+                                y
+                            },
+                            parameters = new
+                            {
+                                input = component is IGH_Component ghComponent
+                                    ? ghComponent.Params.Input.Select(p => new
+                                    {
+                                        name = p.Name,
+                                        nickname = p.NickName,
+                                        description = p.Description,
+                                        type_name = p.TypeName,
+                                        param_id = p.InstanceGuid.ToString(),
+                                        optional = p.Optional,
+                                    }).ToArray()
+                                    : Array.Empty<object>(),
+                                output = component is IGH_Component ghOutputComponent
+                                    ? ghOutputComponent.Params.Output.Select(p => new
+                                    {
+                                        name = p.Name,
+                                        nickname = p.NickName,
+                                        description = p.Description,
+                                        type_name = p.TypeName,
+                                        param_id = p.InstanceGuid.ToString()
+                                    }).ToArray()
+                                    : Array.Empty<object>()
+                            }
+                        }
+                    };
+                }));
+
+                if (result == null)
+                {
+                    throw new McpProtocolException("Unexpected error: no result from UI thread operation");
+                }
+
+                var jsonStr = JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
+
+                // エラーオブジェクトかチェック
+                var jsonDoc = JsonSerializer.Deserialize<JsonElement>(jsonStr);
+                if (jsonDoc.TryGetProperty("error", out var errorProp))
+                {
+                    throw new McpProtocolException(errorProp.GetString() ?? "Unknown error");
+                }
 
                 return Task.FromResult(new CallToolResult()
                 {
                     Content = [new TextContentBlock()
                     {
-                        Text = JsonSerializer.Serialize(response, new JsonSerializerOptions
-                        {
-                            WriteIndented = true
-                        }),
+                        Text = jsonStr,
                     }]
                 });
             }

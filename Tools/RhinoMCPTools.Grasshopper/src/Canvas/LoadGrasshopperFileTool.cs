@@ -95,15 +95,21 @@ namespace RhinoMCPTools.Grasshopper.Canvas
                     // replace_active=true の場合、既存ドキュメントを閉じる
                     if (replaceActive && docServer != null)
                     {
-                        // Instances.ActiveCanvas.Document はリフレクション経由で取得
-                        // （GH_Canvas が System.Windows.Forms.Control を継承するため）
-                        var canvasProp = typeof(Instances).GetProperty("ActiveCanvas");
-                        var canvasInstance = canvasProp?.GetValue(null);
-                        var activeDoc = canvasInstance?.GetType().GetProperty("Document")?.GetValue(canvasInstance) as GH_Document;
-                        if (activeDoc != null)
+                        try
                         {
-                            docServer.RemoveDocument(activeDoc);
-                            activeDoc.Dispose();
+                            var canvasProp = typeof(Instances).GetProperty("ActiveCanvas");
+                            var canvasInstance = canvasProp?.GetValue(null);
+                            var activeDoc = canvasInstance?.GetType().GetProperty("Document")?.GetValue(canvasInstance) as GH_Document;
+                            if (activeDoc != null)
+                            {
+                                docServer.RemoveDocument(activeDoc);
+                                activeDoc.Dispose();
+                            }
+                        }
+                        catch
+                        {
+                            // リフレクション失敗時は既存ドキュメントの削除をスキップ
+                            // AddDocument で新ドキュメントは追加される
                         }
                     }
 
@@ -113,11 +119,19 @@ namespace RhinoMCPTools.Grasshopper.Canvas
                     // アクティブドキュメントとして明示的に設定
                     // Instances.ActiveCanvas は GH_Canvas (extends Control) を返すため、
                     // System.Windows.Forms 参照を避けリフレクション経由でアクセスする
-                    var instancesType = typeof(Instances);
-                    var canvasObj = instancesType.GetProperty("ActiveCanvas")?.GetValue(null);
-                    if (canvasObj != null)
+                    try
                     {
-                        canvasObj.GetType().GetProperty("Document")?.SetValue(canvasObj, doc);
+                        var instancesType = typeof(Instances);
+                        var canvasObj = instancesType.GetProperty("ActiveCanvas")?.GetValue(null);
+                        if (canvasObj != null)
+                        {
+                            canvasObj.GetType().GetProperty("Document")?.SetValue(canvasObj, doc);
+                        }
+                    }
+                    catch
+                    {
+                        // リフレクション経由の設定が失敗しても、
+                        // AddDocument + NewSolution で動作するためサイレントに続行
                     }
 
                     doc.Enabled = true;
