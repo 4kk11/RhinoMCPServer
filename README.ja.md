@@ -84,7 +84,7 @@ https://github.com/user-attachments/assets/114e1331-c6fe-45f9-b28c-c88799c0643c
 
 ## システム要件
 
-- Rhino 9 WIP
+- Rhino 8 以降
 - .NET 8.0 Runtime
 
 ## 使用方法
@@ -454,6 +454,24 @@ Grasshopper関連の機能を提供するツール群です。
   - パラメータ：
     - `panel_id` (string, required) - パネルコンポーネントのGUID
     - `text` (string, required) - 設定するテキスト
+
+#### キャンバス・ファイル操作 (Canvas)
+
+- **load_grasshopper_file**
+  - 機能：GHX/GHファイルをGrasshopperに読み込み、ソリューションを実行
+  - パラメータ：
+    - `file_path` (string, required) - 読み込む.ghxまたは.ghファイルの絶対パス
+
+- **save_grasshopper_file**
+  - 機能：アクティブなGrasshopperドキュメントをGHX/GHファイルとして保存
+  - パラメータ：
+    - `file_path` (string, required) - 保存先の.ghxまたは.ghファイルの絶対パス
+    - `overwrite` (boolean, optional, default: false) - 既存ファイルを上書きするかどうか
+
+- **get_solution_status**
+  - 機能：アクティブなGrasshopperドキュメントのソリューション実行状態と全コンポーネントのランタイムメッセージを一括取得
+  - パラメータ：
+    - `include_messages` (boolean, optional, default: true) - 各コンポーネントの詳細メッセージを含めるかどうか
 
 ## ログ
 
