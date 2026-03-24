@@ -84,7 +84,7 @@ https://github.com/user-attachments/assets/114e1331-c6fe-45f9-b28c-c88799c0643c
 
 ## System Requirements
 
-- Rhino 9 WIP
+- Rhino 8 or later
 - .NET 8.0 Runtime
 
 ## How to Use
@@ -461,6 +461,24 @@ Grasshopper integration tools.
   - Parameters:
     - `panel_id` (string, required) - GUID of the panel component
     - `text` (string, required) - Text to set
+
+#### Canvas / File Operations (Canvas)
+
+- **load_grasshopper_file**
+  - Function: Loads a GHX/GH file into Grasshopper as a new document and runs the solution
+  - Parameters:
+    - `file_path` (string, required) - Absolute path to the .ghx or .gh file to load
+
+- **save_grasshopper_file**
+  - Function: Saves the active Grasshopper document to a GHX/GH file
+  - Parameters:
+    - `file_path` (string, required) - Absolute path to save the file (.ghx or .gh)
+    - `overwrite` (boolean, optional, default: false) - Whether to overwrite an existing file
+
+- **get_solution_status**
+  - Function: Retrieves the solution status and all runtime messages from every component in the active Grasshopper document
+  - Parameters:
+    - `include_messages` (boolean, optional, default: true) - Whether to include detailed messages for each component
 
 ## Logs
 
