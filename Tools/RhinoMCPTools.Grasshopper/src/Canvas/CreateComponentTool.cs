@@ -15,6 +15,7 @@ namespace RhinoMCPTools.Grasshopper.Canvas
 {
     /// <summary>
     /// 指定されたGrasshopperコンポーネントを作成するツール
+    /// component_guid, type_name, name のいずれかで指定可能
     /// </summary>
     public class CreateComponentTool : IMCPTool
     {
@@ -27,39 +28,46 @@ namespace RhinoMCPTools.Grasshopper.Canvas
 
         public string Name => "create_component";
 
-        public string Description => "指定されたGrasshopperコンポーネントを作成します";
+        public string Description => "Creates a Grasshopper component on the canvas by component_guid, type_name, or name";
 
-        public JsonElement InputSchema => JsonSerializer.Deserialize<JsonElement>(@"{
-            ""type"": ""object"",
-            ""properties"": {
-                ""type_name"": {
-                    ""type"": ""string"",
-                    ""description"": ""作成するコンポーネントの完全修飾名""
-                },
-                ""x"": {
-                    ""type"": ""number"",
-                    ""description"": ""キャンバス上のX座標"",
-                    ""default"": 0
-                },
-                ""y"": {
-                    ""type"": ""number"",
-                    ""description"": ""キャンバス上のY座標"",
-                    ""default"": 0
+        public JsonElement InputSchema => JsonSerializer.Deserialize<JsonElement>("""
+            {
+                "type": "object",
+                "properties": {
+                    "component_guid": {
+                        "type": "string",
+                        "description": "ComponentGUID of the component to create (highest priority)"
+                    },
+                    "type_name": {
+                        "type": "string",
+                        "description": "Fully qualified type name of the component"
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Component name (partial match search). Error if ambiguous."
+                    },
+                    "x": {
+                        "type": "number",
+                        "description": "X position on the canvas",
+                        "default": 0
+                    },
+                    "y": {
+                        "type": "number",
+                        "description": "Y position on the canvas",
+                        "default": 0
+                    }
                 }
-            },
-            ""required"": [""type_name""]
-        }");
+            }
+            """);
 
         public Task<CallToolResult> ExecuteAsync(CallToolRequestParams request, McpServer? server)
         {
             try
             {
-                // パラメータの取得
-                if (!request.Arguments.TryGetValue("type_name", out var typeNameValue))
+                if (request.Arguments == null)
                 {
-                    throw new McpProtocolException("type_name parameter is required");
+                    throw new McpProtocolException("One of component_guid, type_name, or name is required");
                 }
-                var typeName = typeNameValue.ToString();
 
                 var x = request.Arguments.TryGetValue("x", out var xValue)
                     ? Convert.ToDouble(xValue.ToString())
@@ -68,18 +76,72 @@ namespace RhinoMCPTools.Grasshopper.Canvas
                     ? Convert.ToDouble(yValue.ToString())
                     : 0.0;
 
+                // コンポーネント情報の解決: component_guid > type_name > name
+                GrasshopperComponentAnalyzer.ComponentInfo? componentInfo = null;
+
+                // 1. component_guid による検索（最優先）
+                if (request.Arguments.TryGetValue("component_guid", out var guidValue))
+                {
+                    var guidStr = guidValue.ToString()?.Trim('"');
+                    if (!Guid.TryParse(guidStr, out var guid))
+                    {
+                        throw new McpProtocolException("Invalid GUID format for component_guid");
+                    }
+                    componentInfo = _analyzer.GetComponentByGuid(guid);
+                    if (componentInfo == null)
+                    {
+                        throw new McpProtocolException($"Component with GUID '{guid}' not found");
+                    }
+                }
+                // 2. type_name による検索
+                else if (request.Arguments.TryGetValue("type_name", out var typeNameValue))
+                {
+                    var typeName = typeNameValue.ToString()?.Trim('"');
+                    componentInfo = _analyzer.GetComponentByTypeName(typeName ?? "");
+                    if (componentInfo == null)
+                    {
+                        throw new McpProtocolException($"Component type '{typeName}' not found");
+                    }
+                }
+                // 3. name による検索（部分一致）
+                else if (request.Arguments.TryGetValue("name", out var nameValue))
+                {
+                    var nameStr = nameValue.ToString()?.Trim('"') ?? "";
+                    var matches = _analyzer.SearchByName(nameStr).ToList();
+                    if (matches.Count == 0)
+                    {
+                        throw new McpProtocolException($"No component found matching name '{nameStr}'");
+                    }
+                    if (matches.Count > 1)
+                    {
+                        // 完全一致があればそれを優先
+                        var exactMatch = matches.FirstOrDefault(m =>
+                            m.Name.Equals(nameStr, StringComparison.OrdinalIgnoreCase));
+                        if (exactMatch != null)
+                        {
+                            componentInfo = exactMatch;
+                        }
+                        else
+                        {
+                            var names = string.Join(", ", matches.Take(10).Select(m => $"{m.Name} ({m.ComponentGuid})"));
+                            throw new McpProtocolException($"Ambiguous name '{nameStr}'. Matches: {names}");
+                        }
+                    }
+                    else
+                    {
+                        componentInfo = matches[0];
+                    }
+                }
+                else
+                {
+                    throw new McpProtocolException("One of component_guid, type_name, or name is required");
+                }
+
                 // アクティブなGrasshopperドキュメントを取得
                 var doc = Instances.ActiveDocument;
                 if (doc == null)
                 {
                     throw new McpProtocolException("No active Grasshopper document found");
-                }
-
-                // キャッシュからコンポーネント情報を取得
-                var componentInfo = _analyzer.GetComponentByTypeName(typeName);
-                if (componentInfo == null)
-                {
-                    throw new McpProtocolException($"Component type '{typeName}' not found");
                 }
 
                 // コンポーネントのインスタンスを作成
@@ -106,6 +168,7 @@ namespace RhinoMCPTools.Grasshopper.Canvas
                     component = new
                     {
                         guid = component.InstanceGuid.ToString(),
+                        component_guid = componentInfo.ComponentGuid.ToString(),
                         name = component.Name,
                         position = new
                         {
@@ -149,6 +212,10 @@ namespace RhinoMCPTools.Grasshopper.Canvas
                         }),
                     }]
                 });
+            }
+            catch (McpProtocolException)
+            {
+                throw;
             }
             catch (Exception ex)
             {

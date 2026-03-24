@@ -37,8 +37,8 @@ namespace RhinoMCPTools.Grasshopper
             try
             {
                 bool includeParams = false;
-                if (request.Arguments != null && 
-                    request.Arguments.TryGetValue("include_params", out var includeParamsValue) && 
+                if (request.Arguments != null &&
+                    request.Arguments.TryGetValue("include_params", out var includeParamsValue) &&
                     includeParamsValue is JsonElement includeParamsElement)
                 {
                     includeParams = includeParamsElement.GetBoolean();
@@ -54,36 +54,44 @@ namespace RhinoMCPTools.Grasshopper
                 // Get all components from the canvas
                 var components = doc.Objects
                     .OfType<IGH_DocumentObject>()
-                    .Select(obj => new
+                    .Select(obj =>
                     {
-                        guid = obj.InstanceGuid.ToString(),
-                        name = obj.Name,
-                        nickname = obj.NickName,
-                        description = obj.Description,
-                        category = obj.Category,
-                        subcategory = obj.SubCategory,
-                        position = new 
+                        // コンポーネントの解決状態を判定: categoryが空 = 未解決
+                        var isResolved = !string.IsNullOrEmpty(obj.Category);
+
+                        return new
                         {
-                            x = obj.Attributes.Pivot.X,
-                            y = obj.Attributes.Pivot.Y
-                        },
-                        parameters = includeParams && obj is IGH_Component comp ? new
-                        {
-                            input = comp.Params.Input.Select(p => new
+                            guid = obj.InstanceGuid.ToString(),
+                            component_guid = obj.ComponentGuid.ToString(),
+                            name = obj.Name,
+                            nickname = obj.NickName,
+                            description = obj.Description,
+                            is_resolved = isResolved,
+                            category = obj.Category,
+                            subcategory = obj.SubCategory,
+                            position = new
                             {
-                                name = p.Name,
-                                nickname = p.NickName,
-                                description = p.Description,
-                                type_name = p.TypeName
-                            }).ToArray(),
-                            output = comp.Params.Output.Select(p => new
+                                x = obj.Attributes.Pivot.X,
+                                y = obj.Attributes.Pivot.Y
+                            },
+                            parameters = includeParams && obj is IGH_Component comp ? new
                             {
-                                name = p.Name,
-                                nickname = p.NickName,
-                                description = p.Description,
-                                type_name = p.TypeName
-                            }).ToArray()
-                        } : null
+                                input = comp.Params.Input.Select(p => new
+                                {
+                                    name = p.Name,
+                                    nickname = p.NickName,
+                                    description = p.Description,
+                                    type_name = p.TypeName
+                                }).ToArray(),
+                                output = comp.Params.Output.Select(p => new
+                                {
+                                    name = p.Name,
+                                    nickname = p.NickName,
+                                    description = p.Description,
+                                    type_name = p.TypeName
+                                }).ToArray()
+                            } : null
+                        };
                     })
                     .ToArray();
 
@@ -95,12 +103,12 @@ namespace RhinoMCPTools.Grasshopper
 
                 return Task.FromResult(new CallToolResult()
                 {
-                    Content = [new TextContentBlock() 
-                    { 
-                        Text = JsonSerializer.Serialize(response, new JsonSerializerOptions 
-                        { 
-                            WriteIndented = true 
-                        }), 
+                    Content = [new TextContentBlock()
+                    {
+                        Text = JsonSerializer.Serialize(response, new JsonSerializerOptions
+                        {
+                            WriteIndented = true
+                        }),
                     }]
                 });
             }

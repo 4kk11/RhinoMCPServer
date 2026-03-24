@@ -77,6 +77,7 @@ namespace RhinoMCPTools.Grasshopper.Canvas
                         name = c.Name,
                         description = c.Description,
                         type_name = c.FullTypeName,
+                        component_guid = c.ComponentGuid.ToString(),
                         is_param = c.IsParam,
                         category = c.Category,
                         sub_category = c.SubCategory

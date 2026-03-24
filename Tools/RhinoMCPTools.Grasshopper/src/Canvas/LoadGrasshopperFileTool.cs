@@ -29,6 +29,11 @@ namespace RhinoMCPTools.Grasshopper.Canvas
                     "file_path": {
                         "type": "string",
                         "description": "Absolute path to the .ghx or .gh file to load"
+                    },
+                    "replace_active": {
+                        "type": "boolean",
+                        "description": "If true, closes the current active document and replaces it. If false, adds as a new document.",
+                        "default": true
                     }
                 },
                 "required": ["file_path"]
@@ -63,6 +68,14 @@ namespace RhinoMCPTools.Grasshopper.Canvas
                     throw new McpProtocolException($"File not found: {filePath}");
                 }
 
+                // replace_active パラメータ取得（デフォルト: true）
+                bool replaceActive = true;
+                if (request.Arguments.TryGetValue("replace_active", out var replaceValue) &&
+                    replaceValue is JsonElement replaceElement)
+                {
+                    replaceActive = replaceElement.GetBoolean();
+                }
+
                 // UIスレッドでGH_DocumentIOを使用してファイルを読み込む
                 object? result = null;
                 RhinoApp.InvokeOnUiThread(new Action(() =>
@@ -77,16 +90,42 @@ namespace RhinoMCPTools.Grasshopper.Canvas
                     }
 
                     var doc = io.Document;
+                    var docServer = Instances.DocumentServer;
+
+                    // replace_active=true の場合、既存ドキュメントを閉じる
+                    if (replaceActive && docServer != null)
+                    {
+                        // Instances.ActiveCanvas.Document はリフレクション経由で取得
+                        // （GH_Canvas が System.Windows.Forms.Control を継承するため）
+                        var canvasProp = typeof(Instances).GetProperty("ActiveCanvas");
+                        var canvasInstance = canvasProp?.GetValue(null);
+                        var activeDoc = canvasInstance?.GetType().GetProperty("Document")?.GetValue(canvasInstance) as GH_Document;
+                        if (activeDoc != null)
+                        {
+                            docServer.RemoveDocument(activeDoc);
+                            activeDoc.Dispose();
+                        }
+                    }
 
                     // ドキュメントサーバーに登録
-                    var docServer = Instances.DocumentServer;
                     docServer?.AddDocument(doc);
+
+                    // アクティブドキュメントとして明示的に設定
+                    // Instances.ActiveCanvas は GH_Canvas (extends Control) を返すため、
+                    // System.Windows.Forms 参照を避けリフレクション経由でアクセスする
+                    var instancesType = typeof(Instances);
+                    var canvasObj = instancesType.GetProperty("ActiveCanvas")?.GetValue(null);
+                    if (canvasObj != null)
+                    {
+                        canvasObj.GetType().GetProperty("Document")?.SetValue(canvasObj, doc);
+                    }
+
+                    doc.Enabled = true;
 
                     // ソリューション実行
                     doc.NewSolution(false);
 
-                    // アクティブドキュメントとして設定・キャンバス再描画
-                    doc.Enabled = true;
+                    // キャンバス再描画
                     Instances.RedrawCanvas();
 
                     // IOメッセージの収集
@@ -123,7 +162,7 @@ namespace RhinoMCPTools.Grasshopper.Canvas
                     };
                 }));
 
-                // UIスレッドでエラーが発生した場合
+                // UIスレッドの結果を処理
                 if (result is { } r)
                 {
                     var jsonStr = JsonSerializer.Serialize(r, new JsonSerializerOptions { WriteIndented = true });

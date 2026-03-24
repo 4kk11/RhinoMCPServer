@@ -14,12 +14,13 @@ namespace RhinoMCPTools.Grasshopper.Canvas
 {
     /// <summary>
     /// アクティブドキュメントのソリューション実行状態と、全コンポーネントのエラー・警告を一括取得する
+    /// 未解決コンポーネント（ComponentGUIDが不正）も検出する
     /// </summary>
     public class GetSolutionStatusTool : IMCPTool
     {
         public string Name => "get_solution_status";
 
-        public string Description => "Retrieves the solution status and all runtime messages from every component in the active Grasshopper document";
+        public string Description => "Retrieves the solution status and all runtime messages from every component in the active Grasshopper document, including unresolved components";
 
         public JsonElement InputSchema => JsonSerializer.Deserialize<JsonElement>("""
             {
@@ -58,9 +59,22 @@ namespace RhinoMCPTools.Grasshopper.Canvas
                 int remarkCount = 0;
                 var componentsWithErrors = new List<object>();
                 var componentsWithWarnings = new List<object>();
+                var unresolvedComponents = new List<object>();
 
                 foreach (var obj in doc.Objects)
                 {
+                    // 未解決チェック: Category が空 = ComponentGUID から定義を解決できなかった
+                    if (string.IsNullOrEmpty(obj.Category))
+                    {
+                        unresolvedComponents.Add(new
+                        {
+                            guid = obj.InstanceGuid.ToString(),
+                            component_guid = obj.ComponentGuid.ToString(),
+                            name = obj.Name,
+                            nickname = obj.NickName
+                        });
+                    }
+
                     if (obj is not IGH_ActiveObject active)
                     {
                         continue;
@@ -115,6 +129,8 @@ namespace RhinoMCPTools.Grasshopper.Canvas
                         error_count = errorCount,
                         warning_count = warningCount,
                         remark_count = remarkCount,
+                        unresolved_count = unresolvedComponents.Count,
+                        unresolved_components = unresolvedComponents.ToArray(),
                         components_with_errors = componentsWithErrors.ToArray(),
                         components_with_warnings = componentsWithWarnings.ToArray()
                     }
