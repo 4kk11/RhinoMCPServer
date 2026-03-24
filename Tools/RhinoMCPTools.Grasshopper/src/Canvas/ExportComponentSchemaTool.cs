@@ -45,6 +45,8 @@ namespace RhinoMCPTools.Grasshopper.Canvas
             ["Rectangle"] = "rectangle",
             ["Box"] = "box",
             ["SubD"] = "subd",
+            ["Domain"] = "domain",
+            ["Interval"] = "domain",
         };
 
         public ExportComponentSchemaTool()
@@ -222,6 +224,35 @@ namespace RhinoMCPTools.Grasshopper.Canvas
             return targets;
         }
 
+        // パラメータの.NET型名から、リテラル値を直接受け入れ可能か判定する。
+        // Param_Number, Param_Integer, Param_Boolean, Param_String のみリテラル対応。
+        private static readonly HashSet<string> LiteralParamTypes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "Param_Number",
+            "Param_Integer",
+            "Param_Boolean",
+            "Param_String",
+            "Param_GenericObject",        // Generic Data — GH が暗黙変換
+            "GH_NumberSlider",            // NumberSlider も数値リテラル OK
+        };
+
+        private static bool AcceptsLiteral(IGH_Param param)
+        {
+            var typeName = param.GetType().Name;
+            return LiteralParamTypes.Contains(typeName);
+        }
+
+        private static string MapAccess(IGH_Param param)
+        {
+            return param.Access switch
+            {
+                GH_ParamAccess.item => "item",
+                GH_ParamAccess.list => "list",
+                GH_ParamAccess.tree => "tree",
+                _ => "item",
+            };
+        }
+
         private object? BuildSchemaEntry(GrasshopperComponentAnalyzer.ComponentInfo info)
         {
             var instance = info.CreateInstance();
@@ -238,11 +269,16 @@ namespace RhinoMCPTools.Grasshopper.Canvas
             {
                 var key = string.IsNullOrEmpty(p.NickName) ? p.Name : p.NickName;
                 var dslType = MapType(p.TypeName);
+                var access = MapAccess(p);
 
                 var portDef = new Dictionary<string, object>
                 {
                     ["type"] = dslType,
-                    ["variadic"] = false,
+                    ["variadic"] = access == "list",
+                    ["accepts_literal"] = AcceptsLiteral(p),
+                    ["access"] = access,
+                    ["gh_type"] = p.TypeName ?? "",
+                    ["param_class"] = p.GetType().Name,
                 };
 
                 if (p.Optional)
@@ -262,11 +298,15 @@ namespace RhinoMCPTools.Grasshopper.Canvas
             {
                 var key = string.IsNullOrEmpty(p.NickName) ? p.Name : p.NickName;
                 var dslType = MapType(p.TypeName);
+                var access = MapAccess(p);
 
                 outputs[key] = new Dictionary<string, object>
                 {
                     ["type"] = dslType,
-                    ["variadic"] = false,
+                    ["variadic"] = access == "list",
+                    ["access"] = access,
+                    ["gh_type"] = p.TypeName ?? "",
+                    ["param_class"] = p.GetType().Name,
                 };
                 outputOrder.Add(key);
             }
